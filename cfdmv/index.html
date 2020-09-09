@@ -1,0 +1,130 @@
+<html>
+    <head>
+    <link rel="stylesheet" href="css/blue.css">
+    <script src='https://code.jquery.com/jquery-3.5.1.min.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/@nano-sql/core@2.3.7/dist/nano-sql.min.js'></script>
+    <script src='js/igc-parser.js'></script>
+    <script src='js/fit-parser.js'></script>
+    <script src='js/trackjoiner.js'></script>
+    <script>
+
+  // for debug purposes
+  var showDB = function(){
+      nSQL("tracks").query("select").exec().then((rows) => {
+                      // selected rows
+                      console.log(rows);
+                  }).catch((error) => {
+                    console.log(error.toString());
+                  });
+      nSQL("fixes").query("select").orderBy(["dt ASC"]).exec().then((rows) => {
+                      // selected rows
+                      console.log(rows);
+                  }).catch((error) => {
+                    console.log(error.toString());
+                  });                  
+    }
+
+// Main logic
+    var showHTMLTable = function(tableId){
+      $(tableId + " tbody").empty();
+      var options = { year: '2-digit', month: 'short', day: '2-digit', hour:'numeric', minute:'numeric', second:'numeric'};
+      nSQL("tracks").query("select").orderBy(["dt_start ASC"]).exec().then((rows) => {
+                        for (var i=0; i<rows.length;i++){
+                                    var dt_start = new Intl.DateTimeFormat('fr-FR', options).format(new Date(rows[i].dt_start));
+                                    var dt_end = new Intl.DateTimeFormat('fr-FR', options).format(new Date(rows[i].dt_end));
+                                    $(`${tableId}> tbody:last-child`).append(`<tr><td>${i}</td><td>${dt_start}</td><td>${dt_end}</td><td>${rows[i].nb_fixes}</td><td>${rows[i].name}</td><td>${rows[i].id}</td></tr>`);
+                                  };
+                  }).catch((error) => {
+                    console.log(error.toString());
+                  });
+    };
+
+    //creates a pseudo "download" link for saving the produced IGC
+    var downloadIGCFile = function (filename, text) {
+          var theDownloadlink = $('<a>',{
+                          text: 'Clic and save the generated file',
+                          title: 'Download file',
+                          href: 'data:octet/stream;charset=utf-8,' + encodeURIComponent(text),
+                          download: filename
+                      }).appendTo('#downloadLink');
+
+        };
+
+    // Just make a html table with the content of the DB table tracks
+    var insertDBCallback = function(){
+      showHTMLTable("#parsedTable");
+      $('#joinBtn').removeAttr('disabled');
+    };
+
+    // Don't forget that nSQL().query() return a Promise because of its asynchronous conception
+    var promisedDBRows = function(rows){
+          var szReturn = igcHeaders(new Date(rows[0].dt));
+          var lastType = '';
+          
+          for (var i=0; i<rows.length;i++){
+            if(i==0){
+              lastType = rows[i].type;
+              szReturn += igcTypeCommentFormater (rows[i].type,true);
+            }
+            if  (lastType != rows[i].type){
+              szReturn += igcTypeCommentFormater (lastType,false);
+              lastType = rows[i].type;
+              szReturn += igcTypeCommentFormater (rows[i].type,true);
+            }
+            szReturn += igcBRecordFormater(rows[i]);
+          }
+          szReturn += igcTypeCommentFormater (rows[rows.length-1].type,false);
+          $("#igcResult").html(szReturn);;
+          downloadIGCFile("TEMP.IGC", szReturn);
+          $('#joinBtn').removeAttr('disabled');
+        }
+   // Retrieves the DB as an IGC file (in a javascript string)
+   var getDBasIGCString = function(){
+    nSQL("fixes").query("select").orderBy(["dt ASC"]).exec().then(promisedDBRows).catch((error) => {
+                    console.log(error.toString());
+                  });   
+   };
+
+    initDB();
+    $(window).on('load', function() {
+        $('#igc').removeAttr('disabled');
+        $('#fit').removeAttr('disabled');
+    });
+    </script>
+    </head>
+
+    <body>
+    <div>
+      <p>
+      Does not detect (yet) overlapping periods…<br />
+      FIT is (yet) only hike and IGC should be (yet) only fly…</p>
+      <span id='downloadLink'></span>
+      <br/>
+    </div>
+    <div>
+      <label for="igc" class="btn">Fly•ies IGC format</label>
+      <input id="igc" type='file' accept='.igc' onchange='openIGCFile(event,insertDBCallback)' multiple disabled/> 
+    </div>
+    <div>
+      <label for="fit" class="btn">Hike•s FIT format</label>
+      <input id="fit" type='file' accept='.fit' onchange='openFITFile(event,insertDBCallback)' multiple disabled/>
+    </div>
+    <div>
+      <label for="joinBtn" class="btn">Join tracks</label>
+      <input id="joinBtn" type='button' onclick='getDBasIGCString()' value="Join" disabled/>
+    </div>
+    <br>
+    <div id='output'>
+    <table class="paleBlueRows" id="parsedTable"> 
+      <thead>
+        <tr><td>Section</td><td>début</td><td>Fin</td><td>Nb Points</td><td>Fichier</td><td>SHA256</td></tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    </div>
+    <pre id='igcResult'>
+  </pre>
+    </body>
+    </html>
