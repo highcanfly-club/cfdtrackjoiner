@@ -7,6 +7,7 @@
     <script src='https://cdn.jsdelivr.net/npm/@nano-sql/core@2.3.7/dist/nano-sql.min.js'></script>
     <script src='js/igc-parser.js'></script>
     <script src='js/fit-parser.js'></script>
+    <script src='js/gpx-parser.js'></script>    
     <script src='js/trackjoiner.js'></script>
     <script>
 
@@ -93,6 +94,8 @@
         $('#fitFly').removeAttr('disabled');
         $('#igcHike').removeAttr('disabled');
         $('#fitHike').removeAttr('disabled');
+        $('#gpxHike').removeAttr('disabled');
+        $('#gpxHike').removeAttr('disabled');
     });
     </script>
     </head>
@@ -101,7 +104,7 @@
     <div>
       <p>
       Does not detect (yet) overlapping periods…<br />
-      FIT is (yet) only hike and IGC should be (yet) only fly…</p>
+      tested only with FIT files from Garmin® 6x Pro, IGC from SkyBean® SkyDrop and GPX files exported from Strava®</p>
       <span id='downloadLink'></span>
       <br/>
     </div>
@@ -115,6 +118,10 @@
         <label for="fitFly" class="btn">Fly•ies FIT format</label>
         <input id="fitFly" type='file' accept='.fit' onchange='openFITFile(event,trackTypes.FLY, insertDBCallback)' multiple disabled/>
       </div>
+      <div>
+        <label for="gpxFly" class="btn">Fly•ies GPX format</label>
+        <input id="gpxFly" type='file' accept='.gpx' onchange='openGPXFile(event,trackTypes.FLY, insertDBCallback)' multiple disabled/>
+      </div>      
       </p>
   </div>
   <div>
@@ -127,6 +134,10 @@
       <label for="igcHike" class="btn">Hike•s IGC format</label>
       <input id="igcHike" type='file' accept='.igc' onchange='openIGCFile(event, trackTypes.HIKE, insertDBCallback)' multiple disabled/> 
     </div>
+    <div>
+      <label for="gpxHike" class="btn">Hike•s GPX format</label>
+      <input id="gpxHike" type='file' accept='.gpx' onchange='openGPXFile(event, trackTypes.HIKE, insertDBCallback)' multiple disabled/> 
+    </div>    
   </p>
 </div>    
     <div>

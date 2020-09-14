@@ -8,6 +8,7 @@
 
     const IGCParser = window.IGCParser;
     const FitParser = window.FitParser;
+    const GPXParser = window.GPXParser;
     const nanoDB_name = "cfdmv_db";
 
     const trackTypes = { FLY:'F', HIKE:'H', MIXED:''};
@@ -58,6 +59,41 @@
         }
 
     };
+
+  // Insert on GPX track parsed with GPXParser (data.tracks[0].segments[0])
+  // header goes in tracks , gps points in fixes
+  var insertGPXTrackInDB = function (gpxTrack,hashHex,fileName, trackType, onDBInsertOKCallback){
+    var gpxDate = gpxTrack[0].time;
+    var isoDt_start = gpxTrack[0].time;
+    var isoDt_end = gpxTrack[gpxTrack.length-1].time;
+    nSQL().useDatabase(nanoDB_name);
+    nSQL("tracks")
+      .query("upsert", [{id:hashHex, dt_start:isoDt_start, dt_end:isoDt_end,nb_fixes:gpxTrack.length, name:fileName, type:trackType}])
+      .exec().then(() => {
+                            onDBInsertOKCallback();
+                          }).catch((error) => {
+                            console.log(error.toString());
+                          });
+    for(var i=0;i<gpxTrack.length;i++){
+
+              nSQL("fixes")
+                        .query("upsert", [{
+                                            track_id:hashHex, 
+                                            point:{lat:gpxTrack[i].lat,lon:gpxTrack[i].lon},
+                                            gpsAltitude:gpxTrack[i].elevation,
+                                            preciseAltitude:gpxTrack[i].elevation,
+                                            dt:gpxTrack[i].time.toISOString(),
+                                            type:trackType //WIP use IGC for hike
+                                          }])
+                        .exec().then(() => {
+                                              //OK
+                                            }).catch((error) => {
+                                              console.log(error.toString());
+                                            });
+
+
+  }
+};
 
   // Insert on FIT track parsed with FITParser
   // header goes in tracks , gps points in fixes
@@ -174,6 +210,33 @@
             }
     };
 
+    // Single file reception (with on FileReader), on event:load parse and insert in DB
+    var openGPXFileTreatSingle = function(file, trackType, onDBInsertOKCallback){
+      var reader = new FileReader();
+            reader.addEventListener("load", function (event){
+                    var gpxFile = event.target;
+                    var gpxText = gpxFile.result;
+                    var fileName = getFileName(file.name);
+                    var hash = CryptoJS.SHA256(gpxText);
+                    var hashHex = hash.toString(CryptoJS.enc.Hex);
+                    console.log(fileName);
+                    GPXParser.parseGpx(gpxText, function(error, data) {
+                                                    var gpxTrack = data.tracks[0].segments[0] ; // TODO Allow multitrack
+                                                    insertGPXTrackInDB (gpxTrack,hashHex,fileName, trackType, onDBInsertOKCallback);
+                                                    });
+                    });
+            reader.readAsText(file);     
+    }
+    // Basically creates one openGPXFileTreatSingle per file (on multiple selection)
+    var openGPXFile = function(event, trackType, onDBInsertOKCallback) {
+      var input = event.target;
+      var files = input.files;
+
+      for (var i=0;i<files.length;i++){
+        var file = files[i];
+        openGPXFileTreatSingle(file, trackType, onDBInsertOKCallback);
+        }
+    };
   // drop DB if exists (on some browser even in-memory persists)
   // next creates the 2 tables in memory
     var initDB = function(){
