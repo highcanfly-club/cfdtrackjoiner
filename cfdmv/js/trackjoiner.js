@@ -1,10 +1,11 @@
-    /*************************************
-     * Demo IGC + FIT track joiner for CFD MV (French CFD MV)
-     * © Ronan LE MEILLAT
-     * Totally free and 'As Is' under MIT License
-     * IGC Parser is adapted from NPM package igc-parser https://www.npmjs.com/package/igc-parser (MIT license)
-     * FIT Parser is adapted from NPM package fit-file-parser https://www.npmjs.com/package/fit-file-parser (MIT license)
-     */
+/*************************************
+    * Demo IGC + FIT + GPX track joiner for CFD MV (French CFD MV)
+    * © Ronan LE MEILLAT
+    * Totally free and 'As Is' under MIT License
+    * IGC Parser is adapted from Tobias Bieniek's project https://github.com/Turbo87/igc-parser (MIT license)
+    * FIT Parser is adapted from Dimitrios Kanellopoulos's project https://github.com/jimmykane/fit-parser (MIT license)
+    * GPX Parser is adapted from Thibault Taillandier's project https://github.com/Wilkins/gpx-parse (Apache 2.0 license)
+*/
 
     const IGCParser = window.IGCParser;
     const FitParser = window.FitParser;
