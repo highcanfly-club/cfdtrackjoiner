@@ -308,7 +308,7 @@
    };
 
    var igcTimeFormater = function(date){
-    var dateTimeFormat = new Intl.DateTimeFormat('en', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) 
+    var dateTimeFormat = new Intl.DateTimeFormat('en', { hour: '2-digit',hourCycle: 'h24', minute: '2-digit', second: '2-digit' }) 
     var [{ value: hour },,{ value: minute },,{ value: second }] = dateTimeFormat .formatToParts(date ) 
     return `${hour}${minute}${second}`;
    }
