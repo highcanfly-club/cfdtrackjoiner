@@ -1,10 +1,10 @@
 # CFDTrackJoiner
-Technology demonstrator for joining FIT and IGC files for the new french "CFD Marche et Vol"
+Technology demonstrator for joining GPX, FIT and IGC files for the new french "CFD Marche et Vol"
 
 # Limitations
 This is a pre-alpha version sort of a technology demonstrator.
 
-Today it is only tested with FIT files coming from a Garmin Fenix 6X and IGC files coming from SkyBean SkyDrop variometer.
+Today it is only tested with FIT files coming from a Garmin® Fenix 6X and IGC files coming from SkyBean® SkyDrop variometer and GPX exported from Strava®.
 
 Note also that no validation are made, ie: different tracks should not overlap themselve.
 
