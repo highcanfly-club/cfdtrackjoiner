@@ -9,6 +9,8 @@
     const IGCParser = window.IGCParser;
     const FitParser = window.FitParser;
     const nanoDB_name = "cfdmv_db";
+
+    const trackTypes = { FLY:'F', HIKE:'H', MIXED:''};
   
 
 
@@ -20,13 +22,13 @@
 
   // Insert on IGC track parsed with IGCParser
   // header goes in tracks , gps points in fixes
-    var insertIGCTrackInDB = function (igcTrack,hashHex,fileName,onDBInsertOKCallback){
+    var insertIGCTrackInDB = function (igcTrack,hashHex,fileName, trackType, onDBInsertOKCallback){
       var igcDate = igcTrack.date;
       var isoDt_start = new Date(igcTrack.fixes[0].timestamp);
       var isoDt_end = new Date(igcTrack.fixes[igcTrack.fixes.length-1].timestamp);
       nSQL().useDatabase(nanoDB_name);
       nSQL("tracks")
-        .query("upsert", [{id:hashHex, dt_start:isoDt_start, dt_end:isoDt_end,nb_fixes:igcTrack.fixes.length, name:fileName}])
+        .query("upsert", [{id:hashHex, dt_start:isoDt_start, dt_end:isoDt_end,nb_fixes:igcTrack.fixes.length, name:fileName, type:trackType}])
         .exec().then(() => {
                               onDBInsertOKCallback();
                             }).catch((error) => {
@@ -45,7 +47,7 @@
                                               gpsAltitude:igcTrack.fixes[i].gpsAltitude,
                                               preciseAltitude:igcTrack.fixes[i].pressureAltitude,
                                               dt:new Date(igcTrack.fixes[i].timestamp).toISOString(),
-                                              type:'F' //TODO use IGC for hike
+                                              type:trackType //WIP use IGC for hike
                                             }])
                           .exec().then(() => {
                                                 //OK
@@ -62,10 +64,10 @@
   // TO BE CHECKED :
   // the only altitude my Fenix 6 gives is "enhanced_altitude" not sure all watches have this field
   // TO DO : find a basic watch without barometer for seing wich altitude it gives
-    var insertFITTrackInDB = function(fitTrack, hashHex,fileName,onDBInsertOKCallback){
+    var insertFITTrackInDB = function(fitTrack, hashHex,fileName,trackType, onDBInsertOKCallback){
       nSQL().useDatabase(nanoDB_name);
       nSQL("tracks")
-        .query("upsert", [{id:hashHex, dt_start:fitTrack.records[0].timestamp, dt_end:fitTrack.records[fitTrack.records.length-1].timestamp,nb_fixes:fitTrack.records.length, name:fileName}])
+        .query("upsert", [{id:hashHex, dt_start:fitTrack.records[0].timestamp, dt_end:fitTrack.records[fitTrack.records.length-1].timestamp,nb_fixes:fitTrack.records.length, name:fileName, type:trackType}])
         .exec().then(() => {
                               onDBInsertOKCallback();
                             }).catch((error) => {
@@ -79,7 +81,7 @@
                                               gpsAltitude:fitTrack.records[i].enhanced_altitude,
                                               preciseAltitude:fitTrack.records[i].enhanced_altitude,
                                               dt:fitTrack.records[i].timestamp.toISOString(),
-                                              type:'H' // TODO use FIT for fly
+                                              type:trackType // WIP use FIT for fly
                                             }])
                           .exec().then(() => {
                                                 //OK
@@ -105,7 +107,7 @@
       };
 
     // Single file reception (with on FileReader), on event:load parse and insert in DB
-    var openIGCFileTreatSingle = function(file,onDBInsertOKCallback){
+    var openIGCFileTreatSingle = function(file,trackType, onDBInsertOKCallback){
       var reader = new FileReader();
             reader.addEventListener("load", function (event){
                     var igcFile = event.target;
@@ -114,25 +116,25 @@
                     var hash = CryptoJS.SHA256(text);
                     var hashHex = hash.toString(CryptoJS.enc.Hex);
                     console.log("fileName:"+fileName+ "\n" + igcFile.result.substring(0, 200) + "\nLXSB Last 100 chars\n" + igcFile.result.slice(-100));
-                    insertIGCTrackInDB(IGCParser.parse(text),hashHex,fileName,onDBInsertOKCallback);
+                    insertIGCTrackInDB(IGCParser.parse(text),hashHex,fileName, trackType, onDBInsertOKCallback);
                     });
             reader.readAsText(file);
     };
 
   // Basically creates one openIGCFileTreatSingle per file (on multiple selection)
-    var openIGCFile = function(event,onDBInsertOKCallback) {
+    var openIGCFile = function(event, trackType, onDBInsertOKCallback) {
           var input = event.target;
           var files = input.files;
 
           for (var i=0;i<files.length;i++){
             var file = files[i];
-            openIGCFileTreatSingle(file,onDBInsertOKCallback);
+            openIGCFileTreatSingle(file, trackType, onDBInsertOKCallback);
             }
           
     };
 
     // Single file reception (with on FileReader), on event:load parse and insert in DB
-    var openFITFileTreatSingle = function(file,onDBInsertOKCallback){
+    var openFITFileTreatSingle = function(file, trackType, onDBInsertOKCallback){
       var fitParser = new FitParser({
                                 force: true,
                                 speedUnit: 'km/h',
@@ -154,7 +156,7 @@
                                     if (error) {
                                       console.log(error);
                                     } else {
-                                      insertFITTrackInDB(data, hashHex,fileName,onDBInsertOKCallback);
+                                      insertFITTrackInDB(data, hashHex,fileName, trackType, onDBInsertOKCallback);
                                     }                             
                            });
                     });
@@ -162,13 +164,13 @@
     }
 
     // Basically creates one openFITFileTreatSingle per file (on multiple selection)
-    var openFITFile = function(event,onDBInsertOKCallback) {
+    var openFITFile = function(event, trackType, onDBInsertOKCallback) {
           var input = event.target;
           var files = input.files;
 
           for (var i=0;i<files.length;i++){
             var file = files[i];
-            openFITFileTreatSingle(file,onDBInsertOKCallback);
+            openFITFileTreatSingle(file, trackType, onDBInsertOKCallback);
             }
     };
 
@@ -192,7 +194,8 @@
                   "dt_start:date": {},
                   "dt_end:date": {},
                   "nb_fixes:number": {},
-                  "name:string": {}
+                  "name:string": {},
+                  "type:string": {}   // F for flight H for hike
               }
           },
           {

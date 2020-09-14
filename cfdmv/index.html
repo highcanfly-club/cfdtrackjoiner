@@ -34,7 +34,7 @@
                         for (var i=0; i<rows.length;i++){
                                     var dt_start = new Intl.DateTimeFormat('fr-FR', options).format(new Date(rows[i].dt_start));
                                     var dt_end = new Intl.DateTimeFormat('fr-FR', options).format(new Date(rows[i].dt_end));
-                                    $(`${tableId}> tbody:last-child`).append(`<tr><td>${i}</td><td>${dt_start}</td><td>${dt_end}</td><td>${rows[i].nb_fixes}</td><td>${rows[i].name}</td><td>${rows[i].id}</td></tr>`);
+                                    $(`${tableId}> tbody:last-child`).append(`<tr><td>${i}</td><td>${dt_start}</td><td>${dt_end}</td><td>${rows[i].nb_fixes}</td><td>${rows[i].name}</td><td>${rows[i].type}</td><td>${rows[i].id}</td></tr>`);
                                   };
                   }).catch((error) => {
                     console.log(error.toString());
@@ -89,8 +89,10 @@
 
     initDB();
     $(window).on('load', function() {
-        $('#igc').removeAttr('disabled');
-        $('#fit').removeAttr('disabled');
+        $('#igcFly').removeAttr('disabled');
+        $('#fitFly').removeAttr('disabled');
+        $('#igcHike').removeAttr('disabled');
+        $('#fitHike').removeAttr('disabled');
     });
     </script>
     </head>
@@ -104,13 +106,29 @@
       <br/>
     </div>
     <div>
-      <label for="igc" class="btn">Fly•ies IGC format</label>
-      <input id="igc" type='file' accept='.igc' onchange='openIGCFile(event,insertDBCallback)' multiple disabled/> 
+      <p>
+      <div>
+        <label for="igcFly" class="btn">Fly•ies IGC format</label>
+        <input id="igcFly" type='file' accept='.igc' onchange='openIGCFile(event, trackTypes.FLY, insertDBCallback)' multiple disabled/> 
+      </div>
+      <div>
+        <label for="fitFly" class="btn">Fly•ies FIT format</label>
+        <input id="fitFly" type='file' accept='.fit' onchange='openFITFile(event,trackTypes.FLY, insertDBCallback)' multiple disabled/>
+      </div>
+      </p>
+  </div>
+  <div>
+    <p>  
+    <div>
+      <label for="fitHike" class="btn">Hike•s FIT format</label>
+      <input id="fitHike" type='file' accept='.fit' onchange='openFITFile(event,trackTypes.HIKE, insertDBCallback)' multiple disabled/>
     </div>
     <div>
-      <label for="fit" class="btn">Hike•s FIT format</label>
-      <input id="fit" type='file' accept='.fit' onchange='openFITFile(event,insertDBCallback)' multiple disabled/>
+      <label for="igcHike" class="btn">Hike•s IGC format</label>
+      <input id="igcHike" type='file' accept='.igc' onchange='openIGCFile(event, trackTypes.HIKE, insertDBCallback)' multiple disabled/> 
     </div>
+  </p>
+</div>    
     <div>
       <label for="joinBtn" class="btn">Join tracks</label>
       <input id="joinBtn" type='button' onclick='getDBasIGCString()' value="Join" disabled/>
@@ -119,7 +137,7 @@
     <div id='output'>
     <table class="paleBlueRows" id="parsedTable"> 
       <thead>
-        <tr><td>Section</td><td>début</td><td>Fin</td><td>Nb Points</td><td>Fichier</td><td>SHA256</td></tr>
+        <tr><td>Section</td><td>début</td><td>Fin</td><td>Nb Points</td><td>Fichier</td><td>Type</td><td>SHA256</td></tr>
       </thead>
       <tbody>
       </tbody>
