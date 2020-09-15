@@ -27,10 +27,12 @@
     var insertIGCTrackInDB = function (igcTrack,hashHex,fileName, trackType, onDBInsertOKCallback){
       var igcDate = igcTrack.date;
       var isoDt_start = new Date(igcTrack.fixes[0].timestamp);
+      var unixTs_start = isoDt_start.getTime();
       var isoDt_end = new Date(igcTrack.fixes[igcTrack.fixes.length-1].timestamp);
+      var unixTs_end = isoDt_end.getTime();
       nSQL().useDatabase(nanoDB_name);
       nSQL("tracks")
-        .query("upsert", [{id:hashHex, dt_start:isoDt_start, dt_end:isoDt_end,nb_fixes:igcTrack.fixes.length, name:fileName, type:trackType}])
+        .query("upsert", [{id:hashHex, dt_start:isoDt_start, ts_start:unixTs_start, dt_end:isoDt_end, ts_end:unixTs_end, nb_fixes:igcTrack.fixes.length, name:fileName, type:trackType}])
         .exec().then(() => {
                               onDBInsertOKCallback();
                             }).catch((error) => {
@@ -66,10 +68,12 @@
   var insertGPXTrackInDB = function (gpxTrack,hashHex,fileName, trackType, onDBInsertOKCallback){
     var gpxDate = gpxTrack[0].time;
     var isoDt_start = gpxTrack[0].time;
+    var unixTs_start = isoDt_start.getTime();
     var isoDt_end = gpxTrack[gpxTrack.length-1].time;
+    var unixTs_end = isoDt_end.getTime();
     nSQL().useDatabase(nanoDB_name);
     nSQL("tracks")
-      .query("upsert", [{id:hashHex, dt_start:isoDt_start, dt_end:isoDt_end,nb_fixes:gpxTrack.length, name:fileName, type:trackType}])
+      .query("upsert", [{id:hashHex, dt_start:isoDt_start, ts_start:unixTs_start, dt_end:isoDt_end, ts_end:unixTs_end, nb_fixes:gpxTrack.length, name:fileName, type:trackType}])
       .exec().then(() => {
                             onDBInsertOKCallback();
                           }).catch((error) => {
@@ -102,9 +106,11 @@
   // the only altitude my Fenix 6 gives is "enhanced_altitude" not sure all watches have this field
   // TO DO : find a basic watch without barometer for seing wich altitude it gives
     var insertFITTrackInDB = function(fitTrack, hashHex,fileName,trackType, onDBInsertOKCallback){
+      var unixTs_start = fitTrack.records[0].timestamp.getTime();
+      var unixTs_end = fitTrack.records[fitTrack.records.length-1].timestamp.getTime();
       nSQL().useDatabase(nanoDB_name);
       nSQL("tracks")
-        .query("upsert", [{id:hashHex, dt_start:fitTrack.records[0].timestamp, dt_end:fitTrack.records[fitTrack.records.length-1].timestamp,nb_fixes:fitTrack.records.length, name:fileName, type:trackType}])
+        .query("upsert", [{id:hashHex, dt_start:fitTrack.records[0].timestamp, ts_start:unixTs_start, dt_end:fitTrack.records[fitTrack.records.length-1].timestamp, ts_end:unixTs_end, nb_fixes:fitTrack.records.length, name:fileName, type:trackType}])
         .exec().then(() => {
                               onDBInsertOKCallback();
                             }).catch((error) => {
@@ -256,7 +262,9 @@
               model: {
                   "id:string": {pk: true},
                   "dt_start:date": {},
+                  "ts_start:int":{},
                   "dt_end:date": {},
+                  "ts_end:int": {},
                   "nb_fixes:number": {},
                   "name:string": {},
                   "type:string": {}   // F for flight H for hike
@@ -298,6 +306,14 @@
 
       nSQL().useDatabase(nanoDB_name);
     };
+
+    var getDBTracksRowsAsPromise = function(){
+        return nSQL("tracks").query("select").orderBy(["ts_start ASC"]).exec();
+    }
+
+    var getDBFixesRowsAsPromise = function(){
+      return nSQL("fixes").query("select").orderBy(["dt ASC"]).exec();
+    }
 
    //simple IGC Date formater
    // date is a javascript Date() object
@@ -356,7 +372,7 @@
     return `B${igcTimeFormater(dt)}${igc_lat}${igc_lon}A${igc_pressureAltitude}${igc_gpsAltitude}\r\n`;
    }
 
-   //simple IGC file producer (input is a rows object)
+   //simple IGC file producer (input is a rows of points object)
    var igcProducer = function(rows){
     var szReturn = igcHeaders(new Date(rows[0].dt));
     var lastType = '';
@@ -375,4 +391,14 @@
     }
     szReturn += igcTypeCommentFormater (rows[rows.length-1].type,false);
     return szReturn;
+   }
+
+   //detect if there is an overlap in the rows of tracks 
+   var isAnOverlapDetected = function(rows){
+     for (var i=1; i<rows.length;i++){
+      if (rows[i - 1].ts_end > rows[i].ts_start) {
+        return true;
+      }
+     }
+     return false;
    }

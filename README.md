@@ -6,7 +6,7 @@ This is a pre-alpha version sort of a technology demonstrator.
 
 Today it is only tested with FIT files coming from a Garmin® Fenix 6X and IGC files coming from SkyBean® SkyDrop variometer and GPX exported from Strava®.
 
-Note also that no validation are made, ie: different tracks should not overlap themselve.
+Currently if an interval overlap another the join is not processed.
 
 # License
   Provided "as is" under MIT license.

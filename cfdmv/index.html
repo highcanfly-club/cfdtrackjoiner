@@ -13,13 +13,13 @@
 
   // for debug purposes
   var showDB = function(){
-      nSQL("tracks").query("select").exec().then((rows) => {
+    getDBTracksRowsAsPromise().then((rows) => {
                       // selected rows
                       console.log(rows);
                   }).catch((error) => {
                     console.log(error.toString());
                   });
-      nSQL("fixes").query("select").orderBy(["dt ASC"]).exec().then((rows) => {
+    getDBFixesRowsAsPromise().then((rows) => {
                       // selected rows
                       console.log(rows);
                   }).catch((error) => {
@@ -31,7 +31,7 @@
     var showHTMLTable = function(tableId){
       $(tableId + " tbody").empty();
       var options = { year: '2-digit', month: 'short', day: '2-digit', hour:'numeric', minute:'numeric', second:'numeric'};
-      nSQL("tracks").query("select").orderBy(["dt_start ASC"]).exec().then((rows) => {
+      getDBTracksRowsAsPromise().then((rows) => {
                         for (var i=0; i<rows.length;i++){
                                     var dt_start = new Intl.DateTimeFormat('fr-FR', options).format(new Date(rows[i].dt_start));
                                     var dt_end = new Intl.DateTimeFormat('fr-FR', options).format(new Date(rows[i].dt_end));
@@ -60,17 +60,29 @@
     };
 
     // Don't forget that nSQL().query() return a Promise because of its asynchronous conception
-    var promisedDBRows = function(rows){
-          var igcString = igcProducer(rows);
-          $("#igcResult").html(igcString);;
-          downloadIGCFile("TEMP.IGC", igcString);
-          $('#joinBtn').removeAttr('disabled');
+    // promised_rows is in order [tracksQueryPromise,fixesQueryPromise]
+    var promisedDBRows = function(promised_rows){
+          var tracks_rows = promised_rows[0];
+          var fixes_rows = promised_rows[1];
+          var valid = !isAnOverlapDetected(tracks_rows); //negative logic !
+          if (valid){
+            var igcString = igcProducer(fixes_rows);
+            $("#igcResult").html(igcString);;
+            downloadIGCFile("TEMP.IGC", igcString);
+            $('#joinBtn').removeAttr('disabled');
+          }else{
+            $("#igcResult").html("<h1 style='color: #FF0000'><b>OVERLAP DETECTED</b></h1>");
+            $('#joinBtn').attr("disabled", true);
+          }
         }
+
    // Retrieves the DB as an IGC file (in a javascript string)
    var getDBasIGCString = function(){
-    nSQL("fixes").query("select").orderBy(["dt ASC"]).exec().then(promisedDBRows).catch((error) => {
-                    console.log(error.toString());
-                  });   
+      var tracksQueryPromise = getDBTracksRowsAsPromise();
+      var fixesQueryPromise = getDBFixesRowsAsPromise();
+      Promise.all([tracksQueryPromise,fixesQueryPromise]).then(promisedDBRows).catch((error) => {
+                      console.log(error.toString());
+                    });   
    };
 
     initDB();
@@ -88,7 +100,7 @@
     <body>
     <div>
       <p>
-      Does not detect (yet) overlapping periods…<br />
+      With basic overlapping detection…<br />
       tested only with FIT files from Garmin® 6x Pro, IGC from SkyBean® SkyDrop and GPX files exported from Strava®</p>
       <span id='downloadLink'></span>
       <br/>
