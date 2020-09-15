@@ -355,3 +355,24 @@
     var igc_gpsAltitude = igcAltitudeFormater(isNaN(row.gpsAltitude) ? 0 : row.gpsAltitude);
     return `B${igcTimeFormater(dt)}${igc_lat}${igc_lon}A${igc_pressureAltitude}${igc_gpsAltitude}\r\n`;
    }
+
+   //simple IGC file producer (input is a rows object)
+   var igcProducer = function(rows){
+    var szReturn = igcHeaders(new Date(rows[0].dt));
+    var lastType = '';
+    
+    for (var i=0; i<rows.length;i++){
+      if(i==0){
+        lastType = rows[i].type;
+        szReturn += igcTypeCommentFormater (rows[i].type,true);
+      }
+      if  (lastType != rows[i].type){
+        szReturn += igcTypeCommentFormater (lastType,false);
+        lastType = rows[i].type;
+        szReturn += igcTypeCommentFormater (rows[i].type,true);
+      }
+      szReturn += igcBRecordFormater(rows[i]);
+    }
+    szReturn += igcTypeCommentFormater (rows[rows.length-1].type,false);
+    return szReturn;
+   }

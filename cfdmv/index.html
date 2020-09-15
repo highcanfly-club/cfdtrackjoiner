@@ -61,24 +61,9 @@
 
     // Don't forget that nSQL().query() return a Promise because of its asynchronous conception
     var promisedDBRows = function(rows){
-          var szReturn = igcHeaders(new Date(rows[0].dt));
-          var lastType = '';
-          
-          for (var i=0; i<rows.length;i++){
-            if(i==0){
-              lastType = rows[i].type;
-              szReturn += igcTypeCommentFormater (rows[i].type,true);
-            }
-            if  (lastType != rows[i].type){
-              szReturn += igcTypeCommentFormater (lastType,false);
-              lastType = rows[i].type;
-              szReturn += igcTypeCommentFormater (rows[i].type,true);
-            }
-            szReturn += igcBRecordFormater(rows[i]);
-          }
-          szReturn += igcTypeCommentFormater (rows[rows.length-1].type,false);
-          $("#igcResult").html(szReturn);;
-          downloadIGCFile("TEMP.IGC", szReturn);
+          var igcString = igcProducer(rows);
+          $("#igcResult").html(igcString);;
+          downloadIGCFile("TEMP.IGC", igcString);
           $('#joinBtn').removeAttr('disabled');
         }
    // Retrieves the DB as an IGC file (in a javascript string)
