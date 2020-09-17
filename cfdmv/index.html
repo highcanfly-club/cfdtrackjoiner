@@ -86,10 +86,11 @@
    };
 
     initDB();
-    $(window).on('load', function() {
+     $(window).on('load', function() {
         $('#filesFly').removeAttr('disabled');
-        $('#filestHike').removeAttr('disabled');
-    });
+        $('#filesHike').removeAttr('disabled');
+     });
+
     </script>
     </head>
 
@@ -113,7 +114,7 @@
   <div>
     <p>  
     <div>
-      <label for="filestHike" class="btn">Hike•s (FIT,GPX or IGC format)</label>
+      <label for="filesHike" class="btn">Hike•s (FIT,GPX or IGC format)</label>
       <input id="filesHike" type='file' accept='.igc,.fit,.gpx' onchange='openFile(event,trackTypes.HIKE, insertDBCallback)' multiple disabled/>
     </div>  
   </p>
