@@ -139,6 +139,11 @@
       return fullPath.replace(/^.*[\\\/]/, '');
     };
 
+  // basic file Extension (return file name if there is no extension) // TODO better handling
+    var getFileExtension = function (fileName){
+      return fileName.split('.').pop().split(/\#|\?/)[0].toUpperCase();
+    };
+
   // CryptoJS  needs word array so this is an optimized conversion
     var arrayBufferToWordArray = function(ab) {
         var i8a = new Uint8Array(ab);
@@ -234,6 +239,71 @@
                     });
             reader.readAsText(file);     
     }
+
+    //  Single file reception (with on FileReader), on event:load parse and insert in DB
+    // Generic version
+    var openFileTreatSingle = function(file, trackType, onDBInsertOKCallback){
+      var reader = new FileReader();
+      var fileName = getFileName(file.name);
+      var fileExtension = getFileExtension(fileName);
+            reader.addEventListener("load", function (event){
+                var trackFile = event.target;
+                var fileContent = trackFile.result;
+                var hash = (fileExtension == "FIT") ? CryptoJS.SHA256(arrayBufferToWordArray(fileContent)) : CryptoJS.SHA256(fileContent); // FIT format is binay
+                var hashHex = hash.toString(CryptoJS.enc.Hex);
+                console.log(fileName);
+                switch (fileExtension){
+                  case "FIT":
+                    var fitParser = new FitParser({
+                      force: true,
+                      speedUnit: 'km/h',
+                      lengthUnit: 'm',
+                      temperatureUnit: 'celcius',
+                      elapsedRecordField: true,
+                      mode: 'list',
+                    });
+                    fitParser.parse(fileContent, function (error, data) {
+                                  // Handle result of parse method
+                                  if (error) {
+                                    console.log(error);
+                                  } else {
+                                    insertFITTrackInDB(data, hashHex,fileName, trackType, onDBInsertOKCallback);
+                                  }                             
+                    });
+                    break;
+                  case "IGC":
+                    insertIGCTrackInDB(IGCParser.parse(fileContent),hashHex,fileName, trackType, onDBInsertOKCallback);
+                    break;
+                  case "GPX":
+                    GPXParser.parseGpx(fileContent, function(error, data) {
+                      var gpxTrack = data.tracks[0].segments[0] ; // TODO Allow multitrack
+                      insertGPXTrackInDB (gpxTrack,hashHex,fileName, trackType, onDBInsertOKCallback);
+                      });
+                    break;
+                  default:
+                    //TODO don't do nothing !
+                }
+            });
+      if (fileExtension == "FIT"){
+        reader.readAsArrayBuffer(file);   // Fit files are binary so should get a byte array
+      }else if((fileExtension == "GPX") || (fileExtension == "IGC")){
+        reader.readAsText(file);          // GPX and IGC are text files
+      }else {
+        // TODO don't do nothing !!
+      }
+    }
+
+    // Basically creates one openGPXFileTreatSingle per file (on multiple selection)
+    var openFile = function(event, trackType, onDBInsertOKCallback) {
+      var input = event.target;
+      var files = input.files;
+
+      for (var i=0;i<files.length;i++){
+        var file = files[i];
+        openFileTreatSingle(file, trackType, onDBInsertOKCallback);
+        }
+    };
+
     // Basically creates one openGPXFileTreatSingle per file (on multiple selection)
     var openGPXFile = function(event, trackType, onDBInsertOKCallback) {
       var input = event.target;

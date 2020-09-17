@@ -87,12 +87,8 @@
 
     initDB();
     $(window).on('load', function() {
-        $('#igcFly').removeAttr('disabled');
-        $('#fitFly').removeAttr('disabled');
-        $('#igcHike').removeAttr('disabled');
-        $('#fitHike').removeAttr('disabled');
-        $('#gpxFly').removeAttr('disabled');
-        $('#gpxHike').removeAttr('disabled');
+        $('#filesFly').removeAttr('disabled');
+        $('#filestHike').removeAttr('disabled');
     });
     </script>
     </head>
@@ -109,33 +105,17 @@
     <div>
       <p>
       <div>
-        <label for="igcFly" class="btn">Fly•ies IGC format</label>
-        <input id="igcFly" type='file' accept='.igc' onchange='openIGCFile(event, trackTypes.FLY, insertDBCallback)' multiple disabled/> 
+        <label for="filesFly" class="btn">Fly•ies (FIT,GPX or IGC format)</label>
+        <input id="filesFly" type='file' accept='.igc,.fit,.gpx' onchange='openFile(event, trackTypes.FLY, insertDBCallback)' multiple disabled/> 
       </div>
-      <div>
-        <label for="fitFly" class="btn">Fly•ies FIT format</label>
-        <input id="fitFly" type='file' accept='.fit' onchange='openFITFile(event,trackTypes.FLY, insertDBCallback)' multiple disabled/>
-      </div>
-      <div>
-        <label for="gpxFly" class="btn">Fly•ies GPX format</label>
-        <input id="gpxFly" type='file' accept='.gpx' onchange='openGPXFile(event,trackTypes.FLY, insertDBCallback)' multiple disabled/>
-      </div>      
       </p>
   </div>
   <div>
     <p>  
     <div>
-      <label for="fitHike" class="btn">Hike•s FIT format</label>
-      <input id="fitHike" type='file' accept='.fit' onchange='openFITFile(event,trackTypes.HIKE, insertDBCallback)' multiple disabled/>
-    </div>
-    <div>
-      <label for="igcHike" class="btn">Hike•s IGC format</label>
-      <input id="igcHike" type='file' accept='.igc' onchange='openIGCFile(event, trackTypes.HIKE, insertDBCallback)' multiple disabled/> 
-    </div>
-    <div>
-      <label for="gpxHike" class="btn">Hike•s GPX format</label>
-      <input id="gpxHike" type='file' accept='.gpx' onchange='openGPXFile(event, trackTypes.HIKE, insertDBCallback)' multiple disabled/> 
-    </div>    
+      <label for="filestHike" class="btn">Hike•s (FIT,GPX or IGC format)</label>
+      <input id="filesHike" type='file' accept='.igc,.fit,.gpx' onchange='openFile(event,trackTypes.HIKE, insertDBCallback)' multiple disabled/>
+    </div>  
   </p>
 </div>    
     <div>
