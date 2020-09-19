@@ -4,7 +4,7 @@ Technology demonstrator for joining GPX, FIT and IGC files for the new french "C
 # Limitations
 This is a pre-alpha version sort of a technology demonstrator.
 
-Today it is only tested with FIT files coming from a Garmin® Fenix 6X and IGC files coming from SkyBean® SkyDrop variometer and GPX exported from Strava®.
+Today it is only tested with FIT files coming from a Garmin® Fēnix 6x Pro or Garmin® Fēnix 3 and IGC files coming from SkyBean® SkyDrop variometer and GPX exported from Strava®.
 
 Currently if an interval overlap another the join is not processed.
 

@@ -117,11 +117,12 @@
                               console.log(error.toString());
                             });
       for(var i=0; i<fitTrack.records.length; i++){
+        var gpsAltitude = (typeof(fitTrack.records[i].enhanced_altitude) != "undefined") ? fitTrack.records[i].enhanced_altitude : fitTrack.records[i].altitude ;
         nSQL("fixes")
                           .query("upsert", [{
                                               track_id:hashHex, 
                                               point:{lat:fitTrack.records[i].position_lat,lon:fitTrack.records[i].position_long},
-                                              gpsAltitude:fitTrack.records[i].enhanced_altitude,
+                                              gpsAltitude:gpsAltitude,
                                               preciseAltitude:fitTrack.records[i].enhanced_altitude,
                                               dt:fitTrack.records[i].timestamp.toISOString(),
                                               type:trackType // WIP use FIT for fly
