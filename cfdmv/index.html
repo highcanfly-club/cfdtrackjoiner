@@ -35,7 +35,7 @@
                         for (var i=0; i<rows.length;i++){
                                     var dt_start = new Intl.DateTimeFormat('fr-FR', options).format(new Date(rows[i].dt_start));
                                     var dt_end = new Intl.DateTimeFormat('fr-FR', options).format(new Date(rows[i].dt_end));
-                                    $(`${tableId}> tbody:last-child`).append(`<tr><td>${i}</td><td>${dt_start}</td><td>${dt_end}</td><td>${rows[i].nb_fixes}</td><td>${rows[i].name}</td><td>${rows[i].type}</td><td>${rows[i].id}</td></tr>`);
+                                    $(`${tableId}> tbody:last-child`).append(`<tr id='row_${rows[i].id}'><td>${i}</td><td>${dt_start}</td><td>${dt_end}</td><td>${rows[i].nb_fixes}</td><td>${rows[i].name}</td><td>${rows[i].type}</td><td>${rows[i].id}</td></tr>`);
                                   };
                   }).catch((error) => {
                     console.log(error.toString());
@@ -64,13 +64,19 @@
     var promisedDBRows = function(promised_rows){
           var tracks_rows = promised_rows[0];
           var fixes_rows = promised_rows[1];
-          var valid = !isAnOverlapDetected(tracks_rows); //negative logic !
-          if (valid){
+ //Minimal test
+ //       if (!isAnOverlapDetected(tracks_rows)){ //negative logic !
+ // Test returning the list of overlapped rows or an emply array if valid
+          var overlappedRowsIDs = getOverlappedRowsID(tracks_rows);
+          if(overlappedRowsIDs.length == 0){
             var igcString = igcProducer(fixes_rows);
             $("#igcResult").html(igcString);;
             downloadIGCFile("TEMP.IGC", igcString);
             $('#joinBtn').removeAttr('disabled');
           }else{
+            for (var i=0; i<overlappedRowsIDs.length;i++){
+              $("#row_"+overlappedRowsIDs[i]).css('background-color', 'red');
+            }
             $("#igcResult").html("<h1 style='color: #FF0000'><b>OVERLAP DETECTED</b></h1>");
             $('#joinBtn').attr("disabled", true);
           }
