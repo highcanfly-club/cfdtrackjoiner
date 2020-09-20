@@ -19,13 +19,13 @@ https://eltorio.github.io/CFDTrackJoiner/cfdmv/
 
 # Sample usage
 
-  * First you must include the required JavaScript libraries (jQuery, CryptoJS and NanoSQL) you can host them on your website or link them directly from some cdn:
+  * First, you must include the required JavaScript libraries (jQuery, CryptoJS and NanoSQL) you can host them on your website or link them directly from some cdn:
     ```html
     <script src='https://code.jquery.com/jquery-3.5.1.min.js'></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.0.0/crypto-js.min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/@nano-sql/core@2.3.7/dist/nano-sql.min.js'></script>
     ```
-  * you also need this local sources:
+  * you also need these local sources:
     ```html
     <script src='js/igc-parser.js'></script>
     <script src='js/fit-parser.js'></script>
@@ -33,14 +33,14 @@ https://eltorio.github.io/CFDTrackJoiner/cfdmv/
     <script src='js/trackjoiner.js'></script>
     ```
 
-  * Second place the two buttons for flies and for hikes and the button for the result:
+  * Second, place the two buttons for flies and for hikes and the button for the result:
     ```html
     <input id="filesFly" type='file' accept='.igc,.fit,.gpx' onchange='openFile(event, trackTypes.FLY, insertDBCallback)' multiple disabled/> 
     <input id="filesHike" type='file' accept='.igc,.fit,.gpx' onchange='openFile(event,trackTypes.HIKE, insertDBCallback)' multiple disabled/>
     <input id="joinBtn" type='button' onclick='getDBasIGCString()' value="Join" disabled/>
     ```
 
-    The openFile function will be the entry point of the process insertDBCallback is the call back function called when parsing and DB insert are finished.
+    The openFile function will be the entry point of the process. Function insertDBCallback is the call back function called when parsing and DB insert are finished.
     In a minimal void process an empty function will be sufficient but something more complex will be probably necessary.
     For example in the provided index.hml page the call back is used for filling an html table with the current content of the DB and enabling a button for retrieving the result
     ```javascript
@@ -50,7 +50,7 @@ https://eltorio.github.io/CFDTrackJoiner/cfdmv/
     };
     ```
 
-  * Third init
+  * Third, init everything
     In the provided example the initialization is very simple
     ```javascript
       initDB();                                   // Needed for preparing the database
@@ -60,7 +60,7 @@ https://eltorio.github.io/CFDTrackJoiner/cfdmv/
      });
     ```
 
-  * Finally get the result
+  * Finally, get the result!
     ```javascript
     var getDBasIGCString = function(){
       getDBTracksRowsAsPromise().then((rows) => {
