@@ -73,3 +73,40 @@ https://eltorio.github.io/CFDTrackJoiner/cfdmv/
                     });   
      };
     ```
+
+  * If you want to upload the string as a pseudo file this is a sample fuction for doing that
+    ```javascript
+    simpleStringUploadAsFile('https://parapente.ffvl.fr/cfdmvAPI','file',"TEMP.IGC",igcString,"ffvl_name","ffvl_password");
+    ```
+    Note that on the demo page call is
+    ```javascript
+    simpleStringUploadAsFile('upload.php','file','TEMP.IGC',$('#igcResult').html(),'ffvl_name','ffvl_password');
+    ```
+
+    so the content of the "igcResult" html pre tag is sent to the upload.php page. The demo is not working on GitHub pages because there is no server side processor but on my own server it works 😉.
+
+    these function can be something like:
+    ```javascript
+    var simpleStringUploadAsFile = function (uploadURL, fileFormFieldName, fileName, data,name,password)
+    {
+
+      var fd = new FormData();                            //works on all modern browsers
+      var file = new Blob([data], {type: 'plain/text'});
+
+      fd.append(fileFormFieldName, file, fileName);       //this is the <input type='file' name='file'/>
+      fd.append('name',name);                             //<input type='text' name='name' />
+      fd.append('password',password);                     //<input type='password' name='password' />
+      //... fd.append('field_name','value');
+
+      $.ajax({
+        url: uploadURL,
+        method: 'post',
+        data: fd,
+        processData: false,
+        contentType: false ,
+        success: function(response){$("html").html(response);}  // this is for replacing the content of the page with the POST result
+      });
+    }
+    ```
+
+    
