@@ -63,7 +63,7 @@ https://eltorio.github.io/CFDTrackJoiner/cfdmv/
   * Finally, get the result!
     ```javascript
     var getDBasIGCString = function(){
-      getDBTracksRowsAsPromise().then((rows) => {
+      getDBFixesRowsAsPromise().then((rows) => {
                       var igcString = igcProducer(rows);
                       // the IGC file is now in igcString variable
                       // use it as you want
