@@ -378,6 +378,49 @@
       nSQL().useDatabase(nanoDB_name);
     };
 
+    //add milliseconds to Date object
+        var addTimestampToDateObject = function(ts,dateObject){
+          var oDate = new Date();
+          oDate.setTime(dateObject.getTime()+ts);
+          return oDate;
+      }
+  
+      //fixErroneusDT given trackID and realDTStart wich is a Date() object
+      var fixErroneousDT=function(trackId,realDTStart){
+        getDBTrackRowAsPromise(trackId).then(track => {
+          var Δt = realDTStart.getTime() - (new Date(track[0].dt_start)).getTime();
+          nSQL("tracks").query("upsert", {}).where(["id", "=", trackId]).updateImmutable(
+            { dt_start: (addTimestampToDateObject(Δt,new Date(track[0].dt_start))).toISOString(), 
+              ts_start: track[0].ts_start + Δt,
+              dt_end: (addTimestampToDateObject(Δt,new Date(track[0].dt_end))).toISOString(),
+              ts_end: track[0].ts_end + Δt }
+           ).exec();
+           getDBFixesTrackRowAsPromise(trackId).then(fixes => {
+              for (var i=0;i<fixes.length;i++)
+              {
+               nSQL("fixes").query("upsert", {}).where(["id", "=", fixes[i].id]).updateImmutable({
+                  dt: (addTimestampToDateObject(Δt,new Date(fixes[i].dt)).toISOString())
+               }).exec();
+              }
+           });
+        });
+      }
+
+    //return all fixes for one track as Promise given it id
+        var getDBFixesTrackRowAsPromise = function(trackId){
+          return nSQL("fixes").query("select").where(["track_id","=",trackId]).exec();
+      }
+  
+    //return single track as Promise given it id
+    var getDBTrackRowAsPromise = function(trackId){
+        return nSQL("tracks").query("select").where(["id","=",trackId]).exec();
+    }
+
+    var getDBTrackDTStartAsPromise = function(trackId){
+        return getDBTrackRowAsPromise(trackId).then((rows) => {return rows[0]["dt_start"];});
+    }
+
+    //return all tracks as Promise
     var getDBTracksRowsAsPromise = function(){
         return nSQL("tracks").query("select").orderBy(["ts_start ASC"]).exec();
     }
