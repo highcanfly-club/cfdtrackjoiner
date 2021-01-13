@@ -11,10 +11,17 @@
     const FitParser = window.FitParser;
     const GPXParser = window.GPXParser;
     const nanoDB_name = "cfdmv_db";
+    const IGC_GLIDER_TYPE = "TO-BE-FILLED";
+    var igc_glider_type = IGC_GLIDER_TYPE;
 
     const trackTypes = { FLY:'F', HIKE:'H', MIXED:''};
   
 
+
+  //still no XOR in EMEA JavaScript
+  var ansiXOR = function(a,b) {
+    return ( a || b ) && !( a && b );
+  }
 
   //basic Iso date creation from IGC file
     var igcDate2ISO8601 = function (igcDate,igcTime){
@@ -26,13 +33,14 @@
   // header goes in tracks , gps points in fixes
     var insertIGCTrackInDB = function (igcTrack,hashHex,fileName, trackType, onDBInsertOKCallback){
       var igcDate = igcTrack.date;
+      igc_glider_type = ((typeof(igcTrack.gliderType) != "undefined") && (igcTrack.gliderType.length > 0)) ? igcTrack.gliderType : IGC_GLIDER_TYPE;
       var isoDt_start = new Date(igcTrack.fixes[0].timestamp);
       var unixTs_start = isoDt_start.getTime();
       var isoDt_end = new Date(igcTrack.fixes[igcTrack.fixes.length-1].timestamp);
       var unixTs_end = isoDt_end.getTime();
       nSQL().useDatabase(nanoDB_name);
       nSQL("tracks")
-        .query("upsert", [{id:hashHex, dt_start:isoDt_start, ts_start:unixTs_start, dt_end:isoDt_end, ts_end:unixTs_end, nb_fixes:igcTrack.fixes.length, name:fileName, type:trackType}])
+        .query("upsert", [{id:hashHex, dt_start:isoDt_start, ts_start:unixTs_start, dt_end:isoDt_end, ts_end:unixTs_end, nb_fixes:igcTrack.fixes.length, name:fileName, type:trackType, gliderType:igc_glider_type}])
         .exec().then(() => {
                               onDBInsertOKCallback();
                             }).catch((error) => {
@@ -51,6 +59,7 @@
                                               gpsAltitude:igcTrack.fixes[i].gpsAltitude,
                                               preciseAltitude:igcTrack.fixes[i].pressureAltitude,
                                               dt:new Date(igcTrack.fixes[i].timestamp).toISOString(),
+                                              ts:igcTrack.fixes[i].timestamp,
                                               type:trackType //WIP use IGC for hike
                                             }])
                           .exec().then(() => {
@@ -73,7 +82,7 @@
     var unixTs_end = isoDt_end.getTime();
     nSQL().useDatabase(nanoDB_name);
     nSQL("tracks")
-      .query("upsert", [{id:hashHex, dt_start:isoDt_start, ts_start:unixTs_start, dt_end:isoDt_end, ts_end:unixTs_end, nb_fixes:gpxTrack.length, name:fileName, type:trackType}])
+      .query("upsert", [{id:hashHex, dt_start:isoDt_start, ts_start:unixTs_start, dt_end:isoDt_end, ts_end:unixTs_end, nb_fixes:gpxTrack.length, name:fileName, type:trackType,gliderType:""}])
       .exec().then(() => {
                             onDBInsertOKCallback();
                           }).catch((error) => {
@@ -88,6 +97,7 @@
                                             gpsAltitude:gpxTrack[i].elevation,
                                             preciseAltitude:gpxTrack[i].elevation,
                                             dt:gpxTrack[i].time.toISOString(),
+                                            ts:gpxTrack[i].time.getTime(),
                                             type:trackType //WIP use IGC for hike
                                           }])
                         .exec().then(() => {
@@ -110,7 +120,7 @@
       var unixTs_end = fitTrack.records[fitTrack.records.length-1].timestamp.getTime();
       nSQL().useDatabase(nanoDB_name);
       nSQL("tracks")
-        .query("upsert", [{id:hashHex, dt_start:fitTrack.records[0].timestamp, ts_start:unixTs_start, dt_end:fitTrack.records[fitTrack.records.length-1].timestamp, ts_end:unixTs_end, nb_fixes:fitTrack.records.length, name:fileName, type:trackType}])
+        .query("upsert", [{id:hashHex, dt_start:fitTrack.records[0].timestamp, ts_start:unixTs_start, dt_end:fitTrack.records[fitTrack.records.length-1].timestamp, ts_end:unixTs_end, nb_fixes:fitTrack.records.length, name:fileName, type:trackType,gliderType:""}])
         .exec().then(() => {
                               onDBInsertOKCallback();
                             }).catch((error) => {
@@ -125,6 +135,7 @@
                                               gpsAltitude:gpsAltitude,
                                               preciseAltitude:fitTrack.records[i].enhanced_altitude,
                                               dt:fitTrack.records[i].timestamp.toISOString(),
+                                              ts:fitTrack.records[i].timestamp.getTime(),
                                               type:trackType // WIP use FIT for fly
                                             }])
                           .exec().then(() => {
@@ -338,7 +349,8 @@
                   "ts_end:int": {},
                   "nb_fixes:number": {},
                   "name:string": {},
-                  "type:string": {}   // F for flight H for hike
+                  "type:string": {},   // F for flight H for hike
+                  "gliderType:string": {} //or empty string if unknown
               }
           },
           {
@@ -350,6 +362,7 @@
                   "preciseAltitude:number": {},                  
                   "gpsAltitude:number": {},
                   "dt:date": {},
+                  "ts:int": {},
                   "type:string": {}   // F for flight H for hike
               }
           }
@@ -406,6 +419,250 @@
         });
       }
 
+      //insert an array of fixes (probably created with an nSQL query)
+      //return a Promise with the number of fixes inserted
+      var insertFixesArrayInDB =  function (trackId,fixesArray) {
+          return new Promise(function(resolve, reject)
+              {
+                let promisedAll = [];
+                for (var i = 0; i < fixesArray.length; i++) {
+                  promisedAll.push (nSQL("fixes").query("upsert", [{
+                                                                  track_id: trackId,
+                                                                  point: fixesArray[i].point,
+                                                                  gpsAltitude: fixesArray[i].gpsAltitude,
+                                                                  preciseAltitude: fixesArray[i].preciseAltitude,
+                                                                  dt: fixesArray[i].dt,
+                                                                  ts: fixesArray[i].ts,
+                                                                  type: fixesArray[i].type
+                                                                }])
+                                                                  .exec() );
+                }
+                Promise.all(promisedAll).then((value)=>resolve(i));
+              });
+        }
+
+      //cut track in 2 segments
+      //return a Promise with an array containing the new trackIds
+      var splitTrackIn2 = function(trackId,dt_cut){
+        return splitTrackIn3(trackId,dt_cut,dt_cut);
+      }
+
+       //cut track in 3 segments (or 2 if dt_cut_1==dt_cut_2 )
+       //return a Promise with an array containing the new trackIds
+      var splitTrackIn3 = function(trackId,dt_cut_1, dt_cut_2){
+        return new Promise(function(resolve, reject){
+          var P1FixesInsertedPromise=0;
+          var P2FixesInsertedPromise=0;
+          var P3FixesInsertedPromise=0;
+          var track_p1_id = "";
+          var track_p2_id = "";
+          var track_p3_id = "";
+          getDBTrackRowAsPromise(trackId).then(rows => {
+            var trackRow=rows[0];
+            var ts_cut_1 = dt_cut_1.getTime();
+            var ts_cut_2 = dt_cut_2.getTime();
+            if ((trackRow.ts_start < ts_cut_1) && (trackRow.ts_end > ts_cut_2)){
+              track_p1_id = CryptoJS.SHA256(trackRow.id+"-P1");
+              track_p2_id = CryptoJS.SHA256(trackRow.id+"-P2");
+              track_p3_id = CryptoJS.SHA256(trackRow.id+"-P3");
+              nSQL().useDatabase(nanoDB_name);
+              var readGliderTypeIfAny = getDBFirstGliderType();
+              var P1_fixes_promise = nSQL("fixes").query("select").where([ ["track_id","=",trackRow.id],"AND",["ts","<=",ts_cut_1] ]).exec(); 
+              var P2_fixes_promise = nSQL("fixes").query("select").where([ ["track_id","=",trackRow.id],"AND",[["ts",">",ts_cut_1],"AND",["ts","<",ts_cut_2]] ]).exec();
+              var P3_fixes_promise = nSQL("fixes").query("select").where([ ["track_id","=",trackRow.id],"AND",["ts",">=",ts_cut_2] ]).exec();
+              var fixes_delete_promise = nSQL("fixes").query("delete").where(["track_id","=",trackId]).exec();
+              var tracks_delete_promise = nSQL("tracks").query("delete").where(["id","=",trackId]).exec();  
+              Promise.all([P1_fixes_promise,P2_fixes_promise,P3_fixes_promise,readGliderTypeIfAny,fixes_delete_promise,tracks_delete_promise]).then(promised=>{
+                var P1_fixes=promised[0];
+                var P2_fixes=promised[1];
+                var P3_fixes=promised[2];
+                igc_glider_type = promised[3];
+                let splittedId = [];
+                let promisedAll = [];
+                if (P1_fixes.length>0){
+                  promisedAll.push(nSQL("tracks").query("upsert", [{id: track_p1_id, 
+                                              dt_start: new Date(trackRow.ts_start), 
+                                              ts_start: trackRow.ts_start, 
+                                              dt_end: new Date(ts_cut_1-1), 
+                                              ts_end: ts_cut_1-1, 
+                                              nb_fixes:P1_fixes.length, 
+                                              name:trackRow.name+"-P1", 
+                                              type:trackRow.type,
+                                              gliderType: (trackRow.type == trackTypes.FLY) ? igc_glider_type : ""  }])
+                                              .exec().then((value)=>{
+                                                P1FixesInsertedPromise = insertFixesArrayInDB(track_p1_id,P1_fixes);
+                                                splittedId.push(track_p1_id.toString(CryptoJS.enc.Hex));
+                                              }));
+                  
+                }
+                if (P2_fixes.length>0){
+                  promisedAll.push(nSQL("tracks").query("upsert", [{id: track_p2_id, 
+                                              dt_start: new Date(ts_cut_1), 
+                                              ts_start: ts_cut_1, 
+                                              dt_end: new Date(ts_cut_2), 
+                                              ts_end: ts_cut_2, 
+                                              nb_fixes:P2_fixes.length, 
+                                              name:trackRow.name+"-P2", 
+                                              type:trackRow.type,
+                                              gliderType: (trackRow.type == trackTypes.FLY) ? igc_glider_type : ""}])
+                                              .exec().then((value)=>{
+                                                P2FixesInsertedPromise = insertFixesArrayInDB(track_p2_id,P2_fixes);
+                                                splittedId.push(track_p2_id.toString(CryptoJS.enc.Hex));
+                                              }));          
+                }
+                if (P3_fixes.length>0){
+                  promisedAll.push(nSQL("tracks").query("upsert", [{id: track_p3_id, 
+                                            dt_start: new Date(ts_cut_2+1), 
+                                            ts_start: ts_cut_2+1, 
+                                            dt_end: new Date(trackRow.ts_end), 
+                                            ts_end: trackRow.ts_end, 
+                                            nb_fixes:P3_fixes.length, 
+                                            name:trackRow.name+"-P3", 
+                                            type:trackRow.type,
+                                            gliderType: (trackRow.type == trackTypes.FLY) ? igc_glider_type : ""}])
+                                            .exec().then((value)=>{
+                                              P3FixesInsertedPromise = insertFixesArrayInDB(track_p3_id,P3_fixes);
+                                              splittedId.push(track_p3_id.toString(CryptoJS.enc.Hex));
+                                            }));
+                }
+                Promise.all(promisedAll).then((value)=>{
+                  resolve(splittedId);
+                });                   
+              });
+            }
+          });
+        });
+      }
+
+      //split trackId in 2 or 3 parts P1, P2, P3 (can be only P1 and P2)
+      //if ansiXOR((dt_start == trackRow.dt_start) , (dt_end == trackRow.dt_end)) -> only P1 and P2
+      //if ((dt_start == trackRow.dt_start) && (dt_end == trackRow.dt_end)) -> change the whole track
+      //if ((dt_start > trackRow.dt_start) && (dt_end < trackRow.dt_end)) -> P1, P2, P3
+      //return a Promise with value containing an array of the new IDs
+      var changePartOfTrackType = function(trackId, dt_start, dt_end, new_type){
+        return new Promise(function(resolve, reject){
+          getDBTrackRowAsPromise(trackId).then(rows => {
+            var trackRow=rows[0];
+            var ts_start = dt_start.getTime();
+            var ts_end = dt_end.getTime();
+            if (ansiXOR((ts_start == trackRow.ts_start) , (ts_end == trackRow.ts_end)) ){
+                if (ts_start == trackRow.ts_start){
+                  splitTrackIn2(trackId,dt_end).then((value)=>{
+                    console.log("Done split changed track is: "+value[0]);
+                    changeTrackType(value[0],new_type).then((retval)=>{
+                      resolve(value);
+                    });
+                  });
+                }else{
+                  splitTrackIn2(trackId,dt_start).then((value)=>{
+                    console.log("Done split changed track is: "+value[1]);
+                    changeTrackType(value[1],new_type).then((retval)=>{
+                      resolve(value);
+                    });
+                    
+                  });
+                }
+            }else{
+              if ((ts_start > trackRow.ts_start) && (ts_end < trackRow.ts_end)){
+                splitTrackIn3(trackId,dt_start,dt_end).then((value)=>{
+                  console.log("Done split changed track is: "+value[1]);
+                  changeTrackType(value[1],new_type).then((retval)=>{
+                    resolve(value);
+                  });
+                });
+              }else{
+                changeTrackType(trackId,new_type).then((retval)=>{
+                  resolve(value);
+                });
+              }
+            }
+          });
+        });
+      }
+
+
+    // Change track type
+    var changeTrackType = function(trackId, new_type){
+      return new Promise(function(resolve,reject){
+        let tracksPromise = nSQL("tracks").query("upsert",[{type:new_type}]).where(["id","=",trackId]).exec();
+        let fixesPromise = nSQL("fixes").query("upsert",[{type:new_type}]).where(["track_id","=",trackId]).exec();
+        Promise.all([tracksPromise,fixesPromise]).then(resolve(new_type));
+      });
+    }
+
+    //Cut overlapping
+    // Insert A in B , 
+    // if A is in B
+    // extract B1 from B start to A start keeping Fly or Hike flag
+    // extract B2 from A end to B end keeping Fly or Hike flag
+    // return a Promise with filled value with an array containing the 2 new trackId as string
+      var cutOverlapping = function(track_A_id, track_B_id){
+        return new Promise(function(resolve, reject){
+                var A_promise = getDBTrackRowAsPromise(track_A_id);
+                var B_promise = getDBTrackRowAsPromise(track_B_id);
+
+                Promise.all([A_promise,B_promise]).then(promisedDBRows=>{
+                    var track_A_row = promisedDBRows[0][0];
+                    var track_B_row = promisedDBRows[1][0];
+                    if ((typeof(track_A_row) != "undefined") && (typeof(track_B_row) != "undefined"))
+                      {
+                          if ((track_A_row.ts_end < track_B_row.ts_end) && (track_A_row.ts_start > track_B_row.ts_start)){
+                            //so A is in B
+                            console.log(track_A_id+" is in "+track_B_id);
+                            var track_B1_id = CryptoJS.SHA256(track_B_row.id + "-B1");
+                            var track_B2_id = CryptoJS.SHA256(track_B_row.id + "-B2");
+                            let splittedId = [track_B1_id.toString(CryptoJS.enc.Hex),track_B2_id.toString(CryptoJS.enc.Hex)];
+                            nSQL().useDatabase(nanoDB_name);
+                            var B1_fixes_promise = nSQL("fixes").query("select").where([ ["track_id","=",track_B_row.id],"AND",["ts","<",track_A_row.ts_start] ]).exec(); 
+                            var B2_fixes_promise = nSQL("fixes").query("select").where([ ["track_id","=",track_B_row.id],"AND",["ts",">",track_A_row.ts_end] ]).exec();
+                            igc_glider_type = getDBFirstGliderType(); 
+                            Promise.all([B1_fixes_promise,B2_fixes_promise,igc_glider_type]).then(promisedDB_BRows=>
+                            {
+                                      let B1_fixes = promisedDB_BRows[0];
+                                      let B2_fixes = promisedDB_BRows[1];
+                                      let gliderType = promisedDB_BRows[3];
+                                      var insertTrackB1 = nSQL("tracks").query("upsert", [{id: track_B1_id, 
+                                                                      dt_start: new Date(track_B_row.ts_start), 
+                                                                      ts_start: track_B_row.ts_start, 
+                                                                      dt_end: new Date(track_A_row.ts_start-1), 
+                                                                      ts_end: track_A_row.ts_start-1, 
+                                                                      nb_fixes:B1_fixes.length, 
+                                                                      name:track_B_row.name+"-B1", 
+                                                                      type:track_B_row.type,
+                                                                      gliderType: (track_B_row.type == trackTypes.FLY) ? gliderType : ""}])
+                                                    .exec();
+                                      var insertTrackB2 = nSQL("tracks").query("upsert", [{id: track_B2_id, 
+                                                                      dt_start: new Date(track_A_row.ts_end+1), 
+                                                                      ts_start: track_A_row.ts_end+1, 
+                                                                      dt_end: new Date(track_B_row.ts_end), 
+                                                                      ts_end: track_B_row.ts_end, 
+                                                                      nb_fixes:B2_fixes.length, 
+                                                                      name:track_B_row.name+"-B2", 
+                                                                      type:track_B_row.type,
+                                                                      gliderType: (track_B_row.type == trackTypes.FLY) ? gliderType : ""}])
+                                                    .exec();   
+                                      var nbB1FixesInserted = insertFixesArrayInDB(track_B1_id,B1_fixes);
+                                    
+                                      var nbB2FixesInserted = insertFixesArrayInDB(track_B2_id,B2_fixes);
+
+                                      var fixesDelete = nSQL("fixes").query("delete").where(["track_id","=",track_B_row.id]).exec();
+                                      var tracksDelete = nSQL("tracks").query("delete").where(["id","=",track_B_row.id]).exec(); 
+                                      Promise.all([insertTrackB1,insertTrackB2,nbB1FixesInserted,nbB2FixesInserted,fixesDelete,tracksDelete]).then((value)=>{
+                                        resolve(splittedId);
+                                      })   
+                                } );                                                      
+                          }else{
+                            console.log(track_A_id+" is not in "+track_B_id);
+                            reject(track_A_id+" is not in "+track_B_id);
+                          }
+                      }else{
+                        reject("Track A or B unknown");
+                      }
+
+                });
+        });
+      }
+
     //return all fixes for one track as Promise given it id
         var getDBFixesTrackRowAsPromise = function(trackId){
           return nSQL("fixes").query("select").where(["track_id","=",trackId]).exec();
@@ -414,6 +671,19 @@
     //return single track as Promise given it id
     var getDBTrackRowAsPromise = function(trackId){
         return nSQL("tracks").query("select").where(["id","=",trackId]).exec();
+    }
+
+    //return first gliderType if any
+    var getDBFirstGliderType = function(){
+       return new Promise(function(resolve,reject){
+        nSQL("tracks").query("select",["gliderType"]).where([["gliderType.length",">", 0],"AND",["gliderType","!=", IGC_GLIDER_TYPE]]).exec().then((rows)=>{
+          if (( typeof(rows[0].gliderType) != "undefined" ) && (rows[0].gliderType != IGC_GLIDER_TYPE)){
+            resolve(rows[0].gliderType);
+          }else{
+            resolve("");
+          }
+        });
+       });
     }
 
     var getDBTrackDTStartAsPromise = function(trackId){
@@ -425,8 +695,13 @@
         return nSQL("tracks").query("select").orderBy(["ts_start ASC"]).exec();
     }
 
-    var getDBFixesRowsAsPromise = function(){
-      return nSQL("fixes").query("select").orderBy(["dt ASC"]).exec();
+    var getDBFixesRowsAsPromise = function(trackId){
+      if (typeof(trackId) == "undefined"){
+        return nSQL("fixes").query("select").orderBy(["dt ASC"]).exec();
+      }else{
+        return nSQL("fixes").query("select").where(["track_id","=",trackId]).orderBy(["dt ASC"]).exec();
+      }
+      
     }
 
    //simple IGC Date formater
@@ -465,10 +740,21 @@
     }
    };
 
+   //Return a Promise with a string containing the IGC file of a trackId
+   var getTrackASIgcString = function(trackId){
+     return new Promise(function(resolve,reject){
+                getDBFixesRowsAsPromise(trackId).then((value)=>{
+                  let igc_string = igcProducer(value);
+                  resolve(igc_string);
+                });
+     });
+
+  }
+
    //minimal headers for a valid IGC File
    // date is a javascript Date() object
    var igcHeaders = function(date){
-    return `AXCF034 French CFDMV pre-alpha track fusion\r\nHFDTE${igcDateFormater(date)}\r\nHFPLTPILOTINCHARGE:CFDMV\r\nHFCM2CREW2:NIL\r\nHFGTYGLIDERTYPE:TO-BE-FILLED\r\nHFGIDGLIDERID:\r\nHFDTMGPSDATUM:WGS84\r\nHFRFWFIRMWAREVERSION:0\r\nHFRHWHARDWAREVERSION:\r\nHFFTYFRTYPE:TrackJoiner\r\nHFGPSRECEIVER:NIL\r\nHFPRSPRESSALTSENSOR:\r\n`;
+    return `AXCF034 French CFDMV pre-alpha track fusion\r\nHFDTE${igcDateFormater(date)}\r\nHFPLTPILOTINCHARGE:CFDMV\r\nHFCM2CREW2:NIL\r\nHFGTYGLIDERTYPE:${igc_glider_type}\r\nHFGIDGLIDERID:\r\nHFDTMGPSDATUM:WGS84\r\nHFRFWFIRMWAREVERSION:0\r\nHFRHWHARDWAREVERSION:\r\nHFFTYFRTYPE:TrackJoiner\r\nHFGPSRECEIVER:NIL\r\nHFPRSPRESSALTSENSOR:\r\n`;
    };
 
    var igcTypeCommentFormater = function(type,isStart){

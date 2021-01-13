@@ -35,13 +35,20 @@
                         for (var i=0; i<rows.length;i++){
                                     var dt_start = new Intl.DateTimeFormat('fr-FR', options).format(new Date(rows[i].dt_start));
                                     var dt_end = new Intl.DateTimeFormat('fr-FR', options).format(new Date(rows[i].dt_end));
-                                    $(`${tableId}> tbody:last-child`).append(`<tr id='row_${rows[i].id}'><td>${i}</td><td>${dt_start}</td><td>${dt_end}</td><td>${rows[i].nb_fixes}</td><td>${rows[i].name}</td><td>${rows[i].type}</td><td>${rows[i].id}</td></tr>`);
+                                    $(`${tableId}> tbody:last-child`).append(`<tr id='row_${rows[i].id}'><td>${i}</td><td>${dt_start}</td><td>${dt_end}</td><td>${rows[i].nb_fixes}</td><td>${rows[i].name}</td><td>${rows[i].type}</td><td><a id="aid_${rows[i].id}" href="javascript:getTrack('${rows[i].id}')">${rows[i].id}</a></td></tr>`);
                                   };
                   }).catch((error) => {
                     console.log(error.toString());
                   });
     };
-
+    var getTrack = function(trackId){
+      getTrackASIgcString().then((igc_string)=>{
+        $("#aid_"+trackId).attr('href','data:octet/stream;charset=utf-8,' + encodeURIComponent(igc_string)); 
+        $("#aid_"+trackId).attr('title','Ready to download');
+        $("#aid_"+trackId).text('Ready to download: '+trackId);
+        $("#aid_"+trackId).attr('download',trackId+".igc");
+      });
+    }
     //creates a pseudo "download" link for saving the produced IGC
     var downloadIGCFile = function (filename, text) {
           var theDownloadlink = $('<a>',{
@@ -50,7 +57,6 @@
                           href: 'data:octet/stream;charset=utf-8,' + encodeURIComponent(text),
                           download: filename
                       }).appendTo('#downloadLink');
-
         };
 
     // Just make a html table with the content of the DB table tracks
