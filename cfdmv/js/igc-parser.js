@@ -56,7 +56,7 @@ var RE_CM2_HEADER = /^H[FOP]CM2(?:.{0,}?:(.*)|(.*))$/; // P is used by some brok
 var RE_GTY_HEADER = /^H[FO]GTY(?:.{0,}?:(.*)|(.*))$/;
 var RE_GID_HEADER = /^H[FO]GID(?:.{0,}?:(.*)|(.*))$/;
 var RE_CID_HEADER = /^H[FO]CID(?:.{0,}?:(.*)|(.*))$/;
-var RE_CCL_HEADER = /^H[FO]CCL(?:.{0,}?:(.*)|(.*))$/;
+var RE_CCL_HEADER = /^H[FOS]CCL(?:.{0,}?:(.*)|(.*))$/;
 var RE_FTY_HEADER = /^H[FO]FTY(?:.{0,}?:(.*)|(.*))$/;
 var RE_RFW_HEADER = /^H[FO]RFW(?:.{0,}?:(.*)|(.*))$/;
 var RE_RHW_HEADER = /^H[FO]RHW(?:.{0,}?:(.*)|(.*))$/;
@@ -249,7 +249,7 @@ var IGCParser = /** @class */ (function () {
         return this.parseTextHeader('GTY', RE_CID_HEADER, line);
     };
     IGCParser.prototype.parseCompetitionClass = function (line) {
-        return this.parseTextHeader('GID', RE_CCL_HEADER, line);
+        return this.parseTextHeader('CCL', RE_CCL_HEADER, line);
     };
     IGCParser.prototype.parseLoggerType = function (line) {
         return this.parseTextHeader('FTY', RE_FTY_HEADER, line);
