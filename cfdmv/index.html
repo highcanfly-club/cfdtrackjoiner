@@ -32,10 +32,15 @@
       $(tableId + " tbody").empty();
       var options = { year: '2-digit', month: 'short', day: '2-digit', hour:'numeric', minute:'numeric', second:'numeric'};
       getDBTracksRowsAsPromise().then((rows) => {
+                        var integrateLink = '';
                         for (var i=0; i<rows.length;i++){
                                     var dt_start = new Intl.DateTimeFormat('fr-FR', options).format(new Date(rows[i].dt_start));
                                     var dt_end = new Intl.DateTimeFormat('fr-FR', options).format(new Date(rows[i].dt_end));
-                                    $(`${tableId}> tbody:last-child`).append(`<tr id='row_${rows[i].id}'><td>${i}</td><td>${dt_start}</td><td>${dt_end}</td><td>${rows[i].nb_fixes}</td><td>${rows[i].name}</td><td>${rows[i].type}</td><td><a id="aid_${rows[i].id}" href="javascript:getTrack('${rows[i].id}')">${rows[i].id}</a></td></tr>`);
+                                    if (i>0)
+                                    {
+                                      integrateLink = `<br /><a href="javascript:integrateInPreviousTrack('${rows[i].id}').then((value)=>{showHTMLTable('#parsedTable')})">Integrate in previous track</a>`;
+                                    }
+                                    $(`${tableId}> tbody:last-child`).append(`<tr id='row_${rows[i].id}'><td>${i}</td><td>${dt_start}</td><td>${dt_end}</td><td>${rows[i].nb_fixes}</td><td>${rows[i].name}</td><td>${rows[i].type}</td><td><a id="aid_${rows[i].id}" href="javascript:getTrack('${rows[i].id}')">${rows[i].id}</a>${integrateLink}</td></tr>`);
                                   };
                   }).catch((error) => {
                     console.log(error.toString());
