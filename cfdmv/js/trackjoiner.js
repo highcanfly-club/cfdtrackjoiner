@@ -762,9 +762,13 @@
        var longIsStart = isStart ? 'START' : 'END';
        return `LPLT${longType}${longIsStart}\r\n`;
    }
-   //minial IGC record formater
+   //minimal IGC record formater
    var igcBRecordFormater = function(row){
     var dt = new Date(row.dt);
+    if (isNaN(row.point.lat) || isNaN(row.point.lon))
+    {
+      return '';
+    }
     var igc_lat = igcLatFormater(row.point.lat);
     var igc_lon = igcLonFormater(row.point.lon);
     var igc_pressureAltitude = igcAltitudeFormater( isNaN(row.preciseAltitude) ? 0 : row.preciseAltitude);
