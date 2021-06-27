@@ -11,7 +11,9 @@ const IGCParser = window.IGCParser;
 const FitParser = window.FitParser;
 const GPXParser = window.GPXParser;
 const nanoDB_name = "cfdmv_db";
+const _DEFAULT_GLIDER_TYPE = "UNKOWN";
 const IGC_GLIDER_TYPE = "TO-BE-FILLED";
+const FIT_DEFAULT_GLIDER_TYPE = "FIT-GLIDER";
 var igc_glider_type = IGC_GLIDER_TYPE;
 
 const trackTypes = { FLY: 'F', HIKE: 'H', MIXED: '' };
@@ -120,7 +122,7 @@ var insertFITTrackInDB = function (fitTrack, hashHex, fileName, trackType, onDBI
   var unixTs_end = fitTrack.records[fitTrack.records.length - 1].timestamp.getTime();
   nSQL().useDatabase(nanoDB_name);
   nSQL("tracks")
-    .query("upsert", [{ id: hashHex, dt_start: fitTrack.records[0].timestamp, ts_start: unixTs_start, dt_end: fitTrack.records[fitTrack.records.length - 1].timestamp, ts_end: unixTs_end, nb_fixes: fitTrack.records.length, name: fileName, type: trackType, gliderType: "" }])
+    .query("upsert", [{ id: hashHex, dt_start: fitTrack.records[0].timestamp, ts_start: unixTs_start, dt_end: fitTrack.records[fitTrack.records.length - 1].timestamp, ts_end: unixTs_end, nb_fixes: fitTrack.records.length, name: fileName, type: trackType, gliderType: FIT_DEFAULT_GLIDER_TYPE }])
     .exec().then(() => {
       onDBInsertOKCallback();
     }).catch((error) => {
@@ -685,10 +687,10 @@ var getDBTrackRowAsPromise = function (trackId) {
 var getDBFirstGliderType = function () {
   return new Promise(function (resolve, reject) {
     nSQL("tracks").query("select", ["gliderType"]).where([["gliderType.length", ">", 0], "AND", ["gliderType", "!=", IGC_GLIDER_TYPE]]).exec().then((rows) => {
-      if ((typeof (rows[0].gliderType) != "undefined") && (rows[0].gliderType != IGC_GLIDER_TYPE)) {
+      if ( (typeof (rows[0]) != "undefined") && ((typeof (rows[0].gliderType) != "undefined") && (rows[0].gliderType != IGC_GLIDER_TYPE))) {
         resolve(rows[0].gliderType);
       } else {
-        resolve("");
+        resolve(_DEFAULT_GLIDER_TYPE);
       }
     });
   });
