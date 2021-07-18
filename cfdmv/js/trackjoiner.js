@@ -279,6 +279,7 @@ var openFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
         fitParser.parse(fileContent, function (error, data) {
           // Handle result of parse method
           if (error) {
+            alert("Une erreur s'est produite : FITParser "+error.message);
             console.log(error);
           } else {
             insertFITTrackInDB(data, hashHex, fileName, trackType, onDBInsertOKCallback);
@@ -290,8 +291,14 @@ var openFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
         break;
       case "GPX":
         GPXParser.parseGpx(fileContent, function (error, data) {
-          var gpxTrack = data.tracks[0].segments[0]; // TODO Allow multitrack
-          insertGPXTrackInDB(gpxTrack, hashHex, fileName, trackType, onDBInsertOKCallback);
+          if (data != null) {
+            var gpxTrack = data.tracks[0].segments[0]; // TODO Allow multitrack
+            insertGPXTrackInDB(gpxTrack, hashHex, fileName, trackType, onDBInsertOKCallback);
+          } else {
+            alert("Une erreur s'est produite : GPXParser "+error.message);
+            console.log ("GPXParser "+error.message);
+            console.log (error);
+          }
         });
         break;
       default:
