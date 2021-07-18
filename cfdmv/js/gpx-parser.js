@@ -229,6 +229,7 @@ exports.parseGpx = function(gpxString, callback) {
       if (!data.gpx) return callback(new Error("version not specified"), null);
 
     	version = data.gpx.$.version;
+      let xmlns = data.gpx.$.xmlns;
     	
       switch (version) {
         case "1.0":
@@ -238,7 +239,19 @@ exports.parseGpx = function(gpxString, callback) {
           gpxResult = _ParseV11(data.gpx);
           break;
         default:
-          return callback(new Error("version not supported"), null);
+          console.log("Trying to detect version using xmlns because version attribute is missing or misorthographied");
+          switch(xmlns){
+            case "http://www.topografix.com/GPX/1/0":
+              console.log("Version detected as 1.0 please correct your file in the future");
+              gpxResult = _ParseV10(data.gpx);
+              break;
+            case "http://www.topografix.com/GPX/1/1":
+              console.log("Version detected as 1.1 please correct your file in the future");
+              gpxResult = _ParseV11(data.gpx);
+              break;
+            default:
+              return callback(new Error("version not supported"), null);
+          }
       }
 
       callback(null, gpxResult);
