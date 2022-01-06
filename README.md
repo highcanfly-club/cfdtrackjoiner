@@ -15,7 +15,7 @@ Currently if an interval overlap another the join is not processed.
      * FIT Parser is adapted from Dimitrios Kanellopoulos's project https://github.com/jimmykane/fit-parser (MIT license)
      * GPX Parser is adapted from Thibault Taillandier's project https://github.com/Wilkins/gpx-parse (Apache 2.0 license)
 # Test
-https://eltorio.github.io/CFDTrackJoiner/cfdmv/
+https://cfdmv.highcanfly.club/
 
 # Sample usage
 
@@ -27,10 +27,10 @@ https://eltorio.github.io/CFDTrackJoiner/cfdmv/
     ```
   * you also need these local sources:
     ```html
-    <script src='js/igc-parser.js'></script>
-    <script src='js/fit-parser.js'></script>
-    <script src='js/gpx-parser.js'></script>    
-    <script src='js/trackjoiner.js'></script>
+    <script src="https://cfdmv.highcanfly.club/js/igc-parser.js"></script>
+    <script src="https://cfdmv.highcanfly.club/js/fit-parser.js"></script>
+    <script src="https://cfdmv.highcanfly.club/js/gpx-parser.js"></script>
+    <script src="https://cfdmv.highcanfly.club/js/trackjoiner.js"></script>
     ```
 
   * Second, place the two buttons for flies and for hikes and the button for the result:
