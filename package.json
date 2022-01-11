@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "build": "make-dir ./build/js; make-dir ./build/css; uglifyjs ./cfdmv/js/fit-parser.js -c -m -o ./build/js/fit-parser.js ;uglifyjs ./cfdmv/js/gpx-parser.js -c -m -o ./build/js/gpx-parser.js ;uglifyjs ./cfdmv/js/igc-parser.js -c -m -o ./build/js/igc-parser.js ;uglifyjs ./cfdmv/js/trackjoiner.js -c -m -o ./build/js/trackjoiner.js; cpx ./cfdmv/index.html ./build/; cpx ./cfdmv/css/blue.css ./build/css/"
+  },
+  "dependencies": {
+    "cpx2": "^4.1.2",
+    "make-dir-cli": "^3.0.0"
+  }
+}
