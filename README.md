@@ -14,9 +14,17 @@ Currently if an interval overlap another the join is not processed.
      * IGC Parser is adapted from Tobias Bieniek's project https://github.com/Turbo87/igc-parser (MIT license)
      * FIT Parser is adapted from Dimitrios Kanellopoulos's project https://github.com/jimmykane/fit-parser (MIT license)
      * GPX Parser is adapted from Thibault Taillandier's project https://github.com/Wilkins/gpx-parse (Apache 2.0 license)
+     
 # Test
 https://cfdmv.highcanfly.club/
 
+# Deploy on Clouflare Pages
+  After forking this repository, you can deploy it on Cloudflare Pages  
+  ```
+  Build command: npm run build
+  Build output directory: /build
+  Root directory: /
+  ```
 # Sample usage
 
   * First, you must include the required JavaScript libraries (jQuery, CryptoJS and NanoSQL) you can host them on your website or link them directly from some cdn:
@@ -25,14 +33,20 @@ https://cfdmv.highcanfly.club/
     <script src='https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js'></script>
     <script src='https://cdn.jsdelivr.net/npm/@nano-sql/core@2.3.7/dist/nano-sql.min.js'></script>
     ```
-  * you also need these local sources:
+  * you also need these local sources (minified):
     ```html
     <script src="https://cfdmv.highcanfly.club/js/igc-parser.js"></script>
     <script src="https://cfdmv.highcanfly.club/js/fit-parser.js"></script>
     <script src="https://cfdmv.highcanfly.club/js/gpx-parser.js"></script>
     <script src="https://cfdmv.highcanfly.club/js/trackjoiner.js"></script>
     ```
-
+    if you need the source files:
+    ```html
+    <script src="https://cfdmv.highcanfly.club/js/igc-parser-dev.js"></script>
+    <script src="https://cfdmv.highcanfly.club/js/fit-parser-dev.js"></script>
+    <script src="https://cfdmv.highcanfly.club/js/gpx-parser-dev.js"></script>
+    <script src="https://cfdmv.highcanfly.club/js/trackjoiner-dev.js"></script>
+    ```
   * Second, place the two buttons for flies and for hikes and the button for the result:
     ```html
     <input id="filesFly" type='file' accept='.igc,.fit,.gpx' onchange='openFile(event, trackTypes.FLY, insertDBCallback)' multiple disabled/> 

@@ -1,3 +1,9 @@
+/*************************************
+    * Demo IGC + FIT + GPX track joiner for CFD MV (French CFD MV)
+    * © Ronan LE MEILLAT
+    * Totally free and 'As Is' under MIT License
+**************************************/
+
 var fs = require('fs')
 var UglifyJS = require('uglify-js');
 
