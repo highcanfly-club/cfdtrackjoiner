@@ -1,1 +1,0 @@
-../../dist/js/igc-parser-dev.js
