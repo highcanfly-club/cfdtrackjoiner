@@ -6,6 +6,7 @@
     * FIT Parser is adapted from Dimitrios Kanellopoulos's project https://github.com/jimmykane/fit-parser (MIT license)
     * GPX Parser is adapted from Thibault Taillandier's project https://github.com/Wilkins/gpx-parse (Apache 2.0 license)
 */
+/* eslint-disable */
 
 const IGCParser = window.IGCParser;
 const FitParser = window.FitParser;
@@ -17,8 +18,6 @@ const FIT_DEFAULT_GLIDER_TYPE = "FIT-GLIDER";
 var igc_glider_type = IGC_GLIDER_TYPE;
 
 const trackTypes = { FLY: 'F', HIKE: 'H', MIXED: '' };
-
-
 
 //still no XOR in EMEA JavaScript
 var ansiXOR = function (a, b) {
@@ -858,3 +857,6 @@ var integrateInPreviousTrack = function (trackId) {
     });
   });
 }
+
+
+export {initDB,getDBTracksRowsAsPromise,getDBFixesRowsAsPromise,getTrackASIgcString,getOverlappedRowsID,igcProducer,integrateInPreviousTrack,trackTypes,openFile};
