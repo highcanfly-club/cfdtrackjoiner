@@ -43,6 +43,12 @@ function minify(fin, fout) {
   });
 }
 
+function listDir(dir){fs.readdir(dir, (err, files) => {
+  files.forEach(file => {
+    console.log(file);
+  });
+});}
+
 function callbackErr(err) {
   if (err) throw err;
   console.log('File copied');
@@ -50,9 +56,8 @@ function callbackErr(err) {
 
 md('./dist');
 md('./dist/js');
-
-copyFilter('./src/module/trackjoiner.js','./dist/js/trackjoiner-dev.js',/export.*/g,'//removed export')
-minify('./dist/js/trackjoiner-dev.js','./dist/js/trackjoiner.js');
+listDir('./dist');
+listDir('./dist/js');
 minify('./src/module/fit-parser.js','./dist/js/fit-parser.js');
 minify('./src/module/igc-parser.js','./dist/js/igc-parser.js');
 minify('./src/module/gpx-parser.js','./dist/js/gpx-parser.js');
@@ -61,3 +66,8 @@ fs.copyFile('./public/legacy.html','./dist/legacy.html',callbackErr);
 fs.copyFile('./src/module/fit-parser.js','./dist/js/fit-parser-dev.js',callbackErr);
 fs.copyFile('./src/module/igc-parser.js','./dist/js/igc-parser-dev.js',callbackErr);
 fs.copyFile('./src/module/gpx-parser.js','./dist/js/gpx-parser-dev.js',callbackErr);
+copyFilter('./src/module/trackjoiner.js','./dist/js/trackjoiner-dev.js',/export.*/g,'//removed export')
+minify('./dist/js/trackjoiner-dev.js','./dist/js/trackjoiner.js');
+listDir('./dist');
+listDir('./src/module');
+
