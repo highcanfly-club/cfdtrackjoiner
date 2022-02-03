@@ -1,0 +1,12 @@
+{
+  "name": "cfdmv-trackjoiner",
+  "version": "1.0.0",
+  "description": "Join hike and fly tracks",
+  "main": "trackjoiner.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Ronan LE MEILLAT",
+  "license": "MIT"
+}
