@@ -830,7 +830,7 @@ var getOverlappedRowsID = function (rows) {
   var retArray = [];
   for (var i = 1; i < rows.length; i++) {
     if (rows[i - 1].ts_end > rows[i].ts_start) {
-      retArray.push(rows[i].id)
+      retArray.push(rows[i].id);
     }
   }
   return retArray;
