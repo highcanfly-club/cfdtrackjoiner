@@ -36,15 +36,15 @@ function callbackErr(err) {
 }
 
 md('./build');
-md('./build/js');
-md('./build/css');
-minify('./cfdmv/js/trackjoiner.js','./build/js/trackjoiner.js');
-minify('./cfdmv/js/fit-parser.js','./build/js/fit-parser.js');
-minify('./cfdmv/js/igc-parser.js','./build/js/igc-parser.js');
-minify('./cfdmv/js/gpx-parser.js','./build/js/gpx-parser.js');
-fs.copyFile('./cfdmv/index.html','./build/index.html',callbackErr);
-fs.copyFile('./cfdmv/css/blue.css','./build/css/blue.css',callbackErr);
-fs.copyFile('./cfdmv/js/trackjoiner.js','./build/js/trackjoiner-dev.js',callbackErr);
-fs.copyFile('./cfdmv/js/fit-parser.js','./build/js/fit-parser-dev.js',callbackErr);
-fs.copyFile('./cfdmv/js/igc-parser.js','./build/js/igc-parser-dev.js',callbackErr);
-fs.copyFile('./cfdmv/js/gpx-parser.js','./build/js/gpx-parser-dev.js',callbackErr);
+md('./dist/js');
+md('./dist/css');
+minify('./cfdmv/js/trackjoiner.js','./dist/js/trackjoiner.js');
+minify('./cfdmv/js/fit-parser.js','./dist/js/fit-parser.js');
+minify('./cfdmv/js/igc-parser.js','./dist/js/igc-parser.js');
+minify('./cfdmv/js/gpx-parser.js','./dist/js/gpx-parser.js');
+fs.copyFile('./cfdmv/index.html','./dist/index.html',callbackErr);
+fs.copyFile('./cfdmv/css/blue.css','./dist/css/blue.css',callbackErr);
+fs.copyFile('./cfdmv/js/trackjoiner.js','./dist/js/trackjoiner-dev.js',callbackErr);
+fs.copyFile('./cfdmv/js/fit-parser.js','./dist/js/fit-parser-dev.js',callbackErr);
+fs.copyFile('./cfdmv/js/igc-parser.js','./dist/js/igc-parser-dev.js',callbackErr);
+fs.copyFile('./cfdmv/js/gpx-parser.js','./dist/js/gpx-parser-dev.js',callbackErr);
