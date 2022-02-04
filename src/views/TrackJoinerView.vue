@@ -357,7 +357,6 @@ import { Dialog, DialogOverlay, DialogTitle, TransitionChild, TransitionRoot } f
 import { XIcon } from '@heroicons/vue/outline'
 import { reactive } from "vue";
 import {
-  nanoDB_name,
   initDB,
   trackTypes,
   openFile,
@@ -459,9 +458,11 @@ export default {
           state.overlapped_rows = []
         });
     }
-  },
+  }, 
   setup() {
-    if(!window.nSQL().useDatabase(nanoDB_name))
+    if(window.nSQL().listDatabases().length) 
+                  window.nSQL().dropDatabase("cdfmv_db").then(()=>{initDB()});
+    else
                   initDB();
   },
   components: {
