@@ -619,7 +619,7 @@ var cutOverlapping = function (track_A_id, track_B_id) {
       var track_A_row = promisedDBRows[0][0];
       var track_B_row = promisedDBRows[1][0];
       if ((typeof (track_A_row) != "undefined") && (typeof (track_B_row) != "undefined")) {
-        if ((track_A_row.ts_end < track_B_row.ts_end) && (track_A_row.ts_start > track_B_row.ts_start)) {
+        if ((track_A_row.ts_end <= track_B_row.ts_end) && (track_A_row.ts_start >= track_B_row.ts_start)) {
           //so A is in B
           console.log(track_A_id + " is in " + track_B_id);
           var track_B1_id = CryptoJS.SHA256(track_B_row.id + "-B1");
