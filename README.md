@@ -1,5 +1,8 @@
 # CFDTrackJoiner
-Technology demonstrator for joining GPX, FIT and IGC files for the new french "CFD Marche et Vol"
+Technology demonstrator for joining GPX, FIT and IGC files for the new french "CFD Marche et Vol".
+This project is maintained by [High Can Fly | Club de parapente du Nord](https://www.highcanfly.club).
+If you want to help us, your help is welcomed.
+If you want to take your paraglider license with us take a tour on our website, there is a link for getting it.
 
 # Limitations
 This is a pre-alpha version sort of a technology demonstrator.
@@ -22,10 +25,21 @@ https://cfdmv.highcanfly.club/
   After forking this repository, you can deploy it on Cloudflare Pages  
   ```
   Build command: npm run build
-  Build output directory: /build
+  Build output directory: /dist
   Root directory: /
   ```
-# Sample usage
+# Vue.js v3
+  * Vue.js v3 code is available at the root https://cfdmv.highcanfly.club
+  * This project is built as a vuejs v3 template. See implentation in /src/views/TrackJoinerView.vue
+  Currently it still needs to use two globaly declared scripts for legacy compatibility. 
+  * The easiest way is to put them in index.html.
+    ```html
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/@nano-sql/core@2.3.7/dist/nano-sql.min.js'></script>
+    ```
+
+# Legacy sample usage
+  * Legacy code is still available https://cfdmv.highcanfly.club/legacy.html
 
   * First, you must include the required JavaScript libraries (jQuery, CryptoJS and NanoSQL) you can host them on your website or link them directly from some cdn:
     ```html
