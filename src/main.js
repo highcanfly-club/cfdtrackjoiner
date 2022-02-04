@@ -11,7 +11,7 @@ import { createWebHistory, createRouter } from "vue-router";
 const routes = [
     {
             path: "/",
-            component: () => import("@/views/MainPage.vue"),
+            component: () => import("@/views/TrackJoinerView.vue"),
             name: "main-page",
     },
     { path: "/:pathMatch(.*)*", redirect: "/" },
