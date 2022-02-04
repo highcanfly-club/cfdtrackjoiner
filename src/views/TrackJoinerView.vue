@@ -109,7 +109,7 @@
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
-                <tr v-for="(row, index) in dbRows.rows" :key="row.id">
+                <tr v-for="(row, index) in state.rows" :key="row.id">
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center">
                       <div class="flex-shrink-0 h-10 w-10">
@@ -167,14 +167,14 @@
                         text-green-800
                       "
                       :class="
-                        isOverlapped(row, dbRows.overlapped_rows)
+                        isOverlapped(row, state.overlapped_rows)
                           ? 'bg-red-100 cursor-pointer'
                           : 'bg-green-100'
                       "
                       @click="resolveOverlap(row)"
                     >
                       {{
-                        isOverlapped(row, dbRows.overlapped_rows)
+                        isOverlapped(row, state.overlapped_rows)
                           ? "Chevauchement"
                           : "Valide"
                       }}
@@ -212,8 +212,8 @@
     <div class="flex justify-center">
             <button type="button" class="inline-flex items-center font-semibold leading-6 text-sm shadow rounded-md text-white bg-blue-500
         hover:bg-blue-700 transition ease-in-out duration-150 py-2 px-4 m-2" 
-        @click="$refs.fileFly.click()" :disabled="dbRows.isLoading">
-      <svg v-if="dbRows.isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        @click="$refs.fileFly.click()" :disabled="state.isLoading">
+      <svg v-if="state.isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
       </svg>
@@ -229,8 +229,8 @@
     />
         <button type="button" class="inline-flex items-center font-semibold leading-6 text-sm shadow rounded-md text-white bg-blue-500
         hover:bg-blue-700 transition ease-in-out duration-150 py-2 px-4 m-2" 
-        @click="$refs.fileHike.click()" :disabled="dbRows.isLoading">
-      <svg v-if="dbRows.isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        @click="$refs.fileHike.click()" :disabled="state.isLoading">
+      <svg v-if="state.isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
       </svg>
@@ -248,25 +248,25 @@
       @click="clickJoin"
       class="inline-flex items-center font-semibold leading-6 text-sm shadow rounded-md text-white bg-blue-500
         hover:bg-blue-700 transition ease-in-out duration-150 py-2 px-4 m-2" 
-        :disabled="dbRows.isLoading || dbRows.overlapped_rows.length"
-        :class="dbRows.overlapped_rows.length?'bg-slate-200 hover:bg-slate-200git stat':''"
+        :disabled="state.isLoading || state.overlapped_rows.length"
+        :class="state.overlapped_rows.length?'bg-slate-200 hover:bg-slate-200git stat':''"
     >
-          <svg v-if="dbRows.isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <svg v-if="state.isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
       </svg>
       Joindre
     </button>
     <a
-      v-if="dbRows.downloadLink.length"
+      v-if="state.downloadLink.length"
       class="inline-flex items-center font-semibold leading-6 text-sm shadow rounded-md text-white bg-blue-500
         hover:bg-blue-700 transition ease-in-out duration-150 py-2 px-4 m-2" 
-        :disabled="(dbRows.isLoading || dbRows.overlapped_rows.length)"
+        :disabled="(state.isLoading || state.overlapped_rows.length)"
         download="trackjoiner.igc"
         title="télécharger"
-        :href="dbRows.downloadLink"
+        :href="state.downloadLink"
     >
-          <svg v-if="dbRows.isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <svg v-if="state.isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
       </svg>
@@ -289,34 +289,34 @@ import {
   getTrackASIgcString,
 } from "@/module/trackjoiner.js";
 
-const dbRows = reactive({ rows: [], overlapped_rows: [], isLoading: false, downloadLink: '' });
+const state = reactive({ rows: [], overlapped_rows: [], isLoading: false, downloadLink: '' });
 
 let insertDBCallback =function () {
-  let _reactiveDbRows = dbRows;
+  let _reactivestate = state;
   getDBTracksRowsAsPromise().then((rows) => {
-    _reactiveDbRows.rows = rows;
-    _reactiveDbRows.isLoading = false;
+    _reactivestate.rows = rows;
+    _reactivestate.isLoading = false;
   });
 }
 
-let promisedDBRows = function (promised_rows) {
-  let _reactiveDbRows = dbRows;
+let promisedstate = function (promised_rows) {
+  let _reactivestate = state;
   var tracks_rows = promised_rows[0];
   var fixes_rows = promised_rows[1];
-  _reactiveDbRows.overlapped_rows = getOverlappedRowsID(tracks_rows);
-  _reactiveDbRows.isLoading = false;
-  if (_reactiveDbRows.overlapped_rows.length == 0) {
+  _reactivestate.overlapped_rows = getOverlappedRowsID(tracks_rows);
+  _reactivestate.isLoading = false;
+  if (_reactivestate.overlapped_rows.length == 0) {
     var igcString = igcProducer(fixes_rows);
-    _reactiveDbRows.downloadLink = "data:octet/stream;charset=utf-8,"+encodeURIComponent(igcString);
+    _reactivestate.downloadLink = "data:octet/stream;charset=utf-8,"+encodeURIComponent(igcString);
   } else {
-    for (var i = 0; i < _reactiveDbRows.overlapped_rows.length; i++) {
-      console.log("#row_" + _reactiveDbRows.overlapped_rows[i] + " OVERLAPPED");
+    for (var i = 0; i < _reactivestate.overlapped_rows.length; i++) {
+      console.log("#row_" + _reactivestate.overlapped_rows[i] + " OVERLAPPED");
     }
   }
 };
 
 let getTrack = function(trackId, target){
-      dbRows.isLoading = true;
+      state.isLoading = true;
       getTrackASIgcString().then((igc_string)=>{
         var a = document.createElement('a');
       var iLink = document.createElement('i');
@@ -326,14 +326,14 @@ let getTrack = function(trackId, target){
       a.href =  "data:octet/stream;charset=utf-8,"+encodeURIComponent(igc_string);
       a.download = trackId+'.igc';
       target.parentNode.replaceChild(a,target);
-         dbRows.isLoading = false;
+         state.isLoading = false;
       });
     }
 export default {
   data() {
     const isHashVisible = false;
     return {
-      dbRows,
+      state,
       trackTypes,
       openFile,
       isHashVisible,
@@ -341,25 +341,25 @@ export default {
   },
   methods: {
     clickFly(event) {
-      dbRows.isLoading = true;
+      state.isLoading = true;
       openFile(event, trackTypes.FLY, insertDBCallback);
     },
     clickHike(event) {
-      dbRows.isLoading = true;
+      state.isLoading = true;
       openFile(event, trackTypes.HIKE, insertDBCallback);
     },
     clickJoin(event) {//eslint-disable-line
-    dbRows.isLoading = true;
+    state.isLoading = true;
       var tracksQueryPromise = getDBTracksRowsAsPromise(); //eslint-disable-line
       var fixesQueryPromise = getDBFixesRowsAsPromise(); //eslint-disable-line
       Promise.all([tracksQueryPromise, fixesQueryPromise])
-        .then(promisedDBRows)
+        .then(promisedstate)
         .catch((error) => {
           console.log(error.toString());
         });
     },
     clickDownload(trackId,event){
-      dbRows.isLoading = true;
+      state.isLoading = true;
       getTrack(trackId,event.target);
     },
     isOverlapped(row, overlapped_rows) {
@@ -371,10 +371,10 @@ export default {
       }
     },
     resolveOverlap(row){
-      dbRows.isLoading = false
+      state.isLoading = false
         integrateInPreviousTrack(row.id).then(()=>{
           insertDBCallback();
-          dbRows.overlapped_rows = []
+          state.overlapped_rows = []
         });
     }
   },
