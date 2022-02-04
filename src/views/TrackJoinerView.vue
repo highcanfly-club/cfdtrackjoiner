@@ -348,7 +348,7 @@
       </div>
     </Dialog>
   </TransitionRoot>
-  <div class="flex fixed w-10 h-10 bottom-2 right-2 bg-blue-200 text-white place-items-center justify-center cursor-pointer rounded" @click="slideOpen = true"><i class="center fas fa-question"></i></div>
+  <div class="flex absolute w-10 h-10 bottom-2 right-2 bg-blue-200 text-white place-items-center justify-center cursor-pointer rounded" @click="slideOpen = true"><i class="center fas fa-question"></i></div>
   <!-- fin aide -->
 </template>
 <script>
