@@ -245,6 +245,7 @@
       class="inline-flex items-center font-semibold leading-6 text-sm shadow rounded-md text-white bg-blue-500
         hover:bg-blue-700 transition ease-in-out duration-150 py-2 px-4 m-2" 
         :disabled="dbRows.isLoading || dbRows.overlapped_rows.length"
+        :class="dbRows.overlapped_rows.length?'bg-slate-200 hover:bg-slate-200':''"
     >
           <svg v-if="dbRows.isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -252,6 +253,21 @@
       </svg>
       Joindre
     </button>
+    <a
+      v-if="dbRows.downloadLink.length"
+      class="inline-flex items-center font-semibold leading-6 text-sm shadow rounded-md text-white bg-blue-500
+        hover:bg-blue-700 transition ease-in-out duration-150 py-2 px-4 m-2" 
+        :disabled="(dbRows.isLoading || dbRows.overlapped_rows.length)"
+        download="trackjoiner.igc"
+        title="télécharger"
+        :href="dbRows.downloadLink"
+    >
+          <svg v-if="dbRows.isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      <i class="fas fa-download"></i>&nbsp;Télécharger
+    </a>
     </div>
   </div>
 </template>
@@ -269,9 +285,9 @@ import {
   getTrackASIgcString,
 } from "@/module/trackjoiner.js";
 
-const dbRows = reactive({ rows: [], overlapped_rows: [], isLoading: false });
+const dbRows = reactive({ rows: [], overlapped_rows: [], isLoading: false, downloadLink: '' });
 
-function insertDBCallback() {
+let insertDBCallback =function () {
   let _reactiveDbRows = dbRows;
   getDBTracksRowsAsPromise().then((rows) => {
     _reactiveDbRows.rows = rows;
@@ -279,7 +295,7 @@ function insertDBCallback() {
   });
 }
 
-var promisedDBRows = function (promised_rows) {
+let promisedDBRows = function (promised_rows) {
   let _reactiveDbRows = dbRows;
   var tracks_rows = promised_rows[0];
   var fixes_rows = promised_rows[1];
@@ -287,7 +303,7 @@ var promisedDBRows = function (promised_rows) {
   _reactiveDbRows.isLoading = false;
   if (_reactiveDbRows.overlapped_rows.length == 0) {
     var igcString = igcProducer(fixes_rows);
-    console.log(igcString);
+    _reactiveDbRows.downloadLink = "data:octet/stream;charset=utf-8,"+encodeURIComponent(igcString);
   } else {
     for (var i = 0; i < _reactiveDbRows.overlapped_rows.length; i++) {
       console.log("#row_" + _reactiveDbRows.overlapped_rows[i] + " OVERLAPPED");
@@ -295,7 +311,7 @@ var promisedDBRows = function (promised_rows) {
   }
 };
 
-var getTrack = function(trackId, target){
+let getTrack = function(trackId, target){
       dbRows.isLoading = true;
       getTrackASIgcString().then((igc_string)=>{
         var a = document.createElement('a');
