@@ -1,5 +1,8 @@
 # CFDTrackJoiner
-Technology demonstrator for joining GPX, FIT and IGC files for the new french "CFD Marche et Vol"
+Technology demonstrator for joining GPX, FIT and IGC files for the new french "CFD Marche et Vol".
+This project is maintained by [High Can Fly | Club de parapente du Nord](https://www.highcanfly.club).
+If you want to help us, your help is welcomed.
+If you want to take your paraglider license with us take a tour on our website, there is a link for getting it.
 
 # Limitations
 This is a pre-alpha version sort of a technology demonstrator.
