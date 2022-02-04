@@ -859,4 +859,4 @@ var integrateInPreviousTrack = function (trackId) {
 }
 
 
-export {initDB,getDBTracksRowsAsPromise,getDBFixesRowsAsPromise,getTrackASIgcString,getOverlappedRowsID,igcProducer,integrateInPreviousTrack,trackTypes,openFile};
+export {nanoDB_name,initDB,getDBTracksRowsAsPromise,getDBFixesRowsAsPromise,getTrackASIgcString,getOverlappedRowsID,igcProducer,integrateInPreviousTrack,trackTypes,openFile};
