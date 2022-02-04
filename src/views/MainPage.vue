@@ -97,10 +97,14 @@
                       tracking-wider
                     "
                   >
-                    {{isHashVisible ? 'Masquer le hash':'Voir le hash'}}
+                    {{isHashVisible ? 'Masquer le hash':'&nbsp;'}}
                   </th>
-                  <th scope="col" class="relative px-6 py-3">
-                    <span class="sr-only">Edit</span>
+                  <th @click="isHashVisible = !isHashVisible" scope="col" class="relative px-6 py-3 text-right text-xs
+                      font-medium
+                      text-gray-500
+                      uppercase
+                      tracking-wider">
+                    {{isHashVisible ? '&nbsp;':'Voir le hash'}}
                   </th>
                 </tr>
               </thead>
@@ -182,8 +186,8 @@
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {{ row.name }}
                   </td>
-                  <td v-if="isHashVisible" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ row.id }}
+                  <td  class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <div v-if="isHashVisible">{{ row.id }}</div>
                   </td>
                   <td
                     class="
@@ -245,7 +249,7 @@
       class="inline-flex items-center font-semibold leading-6 text-sm shadow rounded-md text-white bg-blue-500
         hover:bg-blue-700 transition ease-in-out duration-150 py-2 px-4 m-2" 
         :disabled="dbRows.isLoading || dbRows.overlapped_rows.length"
-        :class="dbRows.overlapped_rows.length?'bg-slate-200 hover:bg-slate-200':''"
+        :class="dbRows.overlapped_rows.length?'bg-slate-200 hover:bg-slate-200git stat':''"
     >
           <svg v-if="dbRows.isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
