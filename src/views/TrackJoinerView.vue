@@ -168,7 +168,7 @@
                       "
                       :class="
                         isOverlapped(row, dbRows.overlapped_rows)
-                          ? 'bg-red-100'
+                          ? 'bg-red-100 cursor-pointer'
                           : 'bg-green-100'
                       "
                       @click="resolveOverlap(row)"
@@ -371,8 +371,11 @@ export default {
       }
     },
     resolveOverlap(row){
-      console.log('integrate:'+row.id);
-        integrateInPreviousTrack(row.id);
+      dbRows.isLoading = false
+        integrateInPreviousTrack(row.id).then(()=>{
+          insertDBCallback();
+          dbRows.overlapped_rows = []
+        });
     }
   },
   setup() {
