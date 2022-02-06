@@ -411,7 +411,7 @@ let getTrack = function(trackId, target){
 export default {
   data() {
     const isHashVisible = false;
-    const slideOpen = ref(false);
+    const slideOpen = ref(this.$route.params.help?true:false);
     return {
       state,
       trackTypes,
