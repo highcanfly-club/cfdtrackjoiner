@@ -14,6 +14,10 @@ const routes = [
             component: () => import("@/views/TrackJoinerView.vue"),
             name: "main-page",
     },
+    {
+        path: "/:help",
+        component: () => import("@/views/TrackJoinerView.vue"),
+      },
     { path: "/:pathMatch(.*)*", redirect: "/" },
 ];
 const router = createRouter({
