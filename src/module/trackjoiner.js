@@ -267,7 +267,7 @@ var openFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
     console.log(fileName);
     switch (fileExtension) {
       case "FIT":
-        var fitParser = new FitParser({
+        var fitParser = new window.FitParser({
           force: true,
           speedUnit: 'km/h',
           lengthUnit: 'm',
@@ -286,10 +286,10 @@ var openFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
         });
         break;
       case "IGC":
-        insertIGCTrackInDB(IGCParser.parse(fileContent), hashHex, fileName, trackType, onDBInsertOKCallback);
+        insertIGCTrackInDB(window.IGCParser.parse(fileContent), hashHex, fileName, trackType, onDBInsertOKCallback);
         break;
       case "GPX":
-        GPXParser.parseGpx(fileContent, function (error, data) {
+        window.GPXParser.parseGpx(fileContent, function (error, data) {
           if (data != null) {
             var gpxTrack = data.tracks[0].segments[0]; // TODO Allow multitrack
             insertGPXTrackInDB(gpxTrack, hashHex, fileName, trackType, onDBInsertOKCallback);
