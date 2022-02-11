@@ -18,8 +18,14 @@ Currently if an interval overlap another the join is not processed.
      * FIT Parser is adapted from Dimitrios Kanellopoulos's project https://github.com/jimmykane/fit-parser (MIT license)
      * GPX Parser is adapted from Thibault Taillandier's project https://github.com/Wilkins/gpx-parse (Apache 2.0 license)
      
-# Test
-https://cfdmv.highcanfly.club/
+# Test and basic help
+https://cfdmv.highcanfly.club/  the app  
+https://cfdmv.highcanfly.club/help the same app with the help slider open  
+
+# Integration in Vue3 project  
+[High Can Fly website](https://www.highcanfly.club) integrates this project in an [integrated card](https://www.highcanfly.club/trackjoiner)  
+[see code in github](https://github.com/eltorio/vue-highcanfly/blob/main/src/views/ViewTrackjoiner.vue)    
+TrackJoinerComponent.vue is a symlink to CFDTrackJoiner/src/views/TrackJoinerView.vue    
 
 # Deploy on Clouflare Pages
   After forking this repository, you can deploy it on Cloudflare Pages  
@@ -31,11 +37,70 @@ https://cfdmv.highcanfly.club/
 # Vue.js v3
   * Vue.js v3 code is available at the root https://cfdmv.highcanfly.club
   * This project is built as a vuejs v3 template. See implentation in /src/views/TrackJoinerView.vue
-  Currently it still needs to use two globaly declared scripts for legacy compatibility. 
-  * The easiest way is to put them in index.html.
-    ```html
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js'></script>
-    <script src='https://cdn.jsdelivr.net/npm/@nano-sql/core@2.3.7/dist/nano-sql.min.js'></script>
+  * The dependencies are currently dynamically loaded from the setup() function in TrackJoinerView.vue  
+  * This is a temporary workaround. A module is in the todo list but it needs to keep the legacy library compatibility.  
+    ```javascript
+            let loadScript = function (src) {
+            return new Promise(function (resolve, reject) {
+                const s = document.createElement("script");
+                let r = false;
+                s.type = "text/javascript";
+                s.src = src;
+                s.async = true;
+                s.onerror = function (err) {
+                    reject(err, s);
+                };
+                s.onload = s.onreadystatechange = function () {
+                    // console.log(this.readyState); // uncomment this line to see which ready states are called.
+                    if (!r && (!this.readyState || this.readyState == "complete")) {
+                        r = true;
+                        resolve();
+                    }
+                };
+                const t = document.getElementsByTagName("script")[0];
+                t.parentElement.insertBefore(s, t);
+            });
+        };
+    ```
+  * The dependencies are dinamically loaded from the setup() function in TrackJoinerView.vue
+    ```javascript
+            setup() {
+            state.isLoading = true;
+            let promiseNanoSql = loadScript(
+                "https://cdn.jsdelivr.net/npm/@nano-sql/core@2.3.7/dist/nano-sql.min.js"
+            );
+            let promiseCryptoJs = loadScript(
+                "https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"
+            );
+            let promiseIgcParser = loadScript(
+                "https://cfdmv.highcanfly.club/js/igc-parser.js"
+            );
+            let promiseFitParser = loadScript(
+                "https://cfdmv.highcanfly.club/js/fit-parser.js"
+            );
+            let promiseGpxParser = loadScript(
+                "https://cfdmv.highcanfly.club/js/gpx-parser.js"
+            );
+
+
+            Promise.all([
+                promiseNanoSql,
+                promiseCryptoJs,
+                promiseIgcParser,
+                promiseFitParser,
+                promiseGpxParser,
+            ]).then(() => {
+                state.isLoading = false;
+                if (window.nSQL().listDatabases().length)
+                    window
+                        .nSQL()
+                        .dropDatabase("cdfmv_db")
+                        .then(() => {
+                            initDB();
+                        });
+                else initDB();
+            });
+        }
     ```
 
 # Legacy sample usage
