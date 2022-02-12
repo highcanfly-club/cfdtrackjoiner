@@ -8,9 +8,6 @@
 */
 /* eslint-disable */
 
-const IGCParser = window.IGCParser;
-const FitParser = window.FitParser;
-const GPXParser = window.GPXParser;
 const nanoDB_name = "cfdmv_db";
 const _DEFAULT_GLIDER_TYPE = "UNKOWN";
 const IGC_GLIDER_TYPE = "TO-BE-FILLED";
