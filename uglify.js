@@ -3,31 +3,29 @@
     * © Ronan LE MEILLAT
     * Totally free and 'As Is' under MIT License
 **************************************/
-
-var fs = require('fs')
+var fs = require('fs');
 var UglifyJS = require('uglify-js');
-
 function md(dir) {
   fs.mkdirSync(dir, { recursive: true }, (err) => {
     if (err) throw err;
   });
 }
 
-function copyFilterMinify(fin, fout,fminify, regex, replacement){
-fs.readFile(fin, 'utf8', function (err,data) {
-  if (err) {
-    return console.log(err);
-  }
-  var result = data.replace(regex, replacement);
+function copyFilterMinify(fin, fout, fminify, regex, replacement) {
+  fs.readFile(fin, 'utf8', function (err, data) {
+    if (err) {
+      return console.log(err);
+    }
+    var result = data.replace(regex, replacement);
 
-  fs.writeFile(fout, result, 'utf8', function (err) {
-     if (err) return console.log(err);
-     else{
-       console.log(fin + " filtered");
-       minify(fout,fminify);
-     }
+    fs.writeFile(fout, result, 'utf8', function (err) {
+      if (err) return console.log(err);
+      else {
+        console.log(fin + " filtered");
+        minify(fout, fminify);
+      }
+    });
   });
-});
 }
 
 function minify(fin, fout) {
@@ -47,6 +45,17 @@ function minify(fin, fout) {
   });
 }
 
+function browserifyFile(fin, fbabelized, fout,fminified) {
+  let browserify = require('browserify');
+  let babel = require("@babel/core");
+  let t = babel.transformFileSync(fin,{presets: ["@babel/preset-env"]});
+  fs.writeFileSync(fbabelized,t.code);
+  let b = browserify();
+  b.add(fbabelized);
+  b.bundle().pipe(fs.createWriteStream(fout,{autoClose: true}).on('close',()=>{minify(fout,fminified)}));
+
+}
+
 function callbackErr(err) {
   if (err) throw err;
   console.log('File copied');
@@ -55,13 +64,11 @@ function callbackErr(err) {
 md('./dist');
 md('./dist/css');
 md('./dist/js');
-copyFilterMinify('./src/module/trackjoiner.js','./dist/js/trackjoiner-dev.js','./dist/js/trackjoiner.js',/export.*/g,'//removed export')
-minify('./src/module/fit-parser.js','./dist/js/fit-parser.js');
-minify('./src/module/igc-parser.js','./dist/js/igc-parser.js');
-minify('./src/module/gpx-parser.js','./dist/js/gpx-parser.js');
-fs.copyFile('./public/css/blue.css','./dist/css/blue.css',callbackErr);
-fs.copyFile('./public/legacy.html','./dist/legacy.html',callbackErr);
-fs.copyFile('./src/module/fit-parser.js','./dist/js/fit-parser-dev.js',callbackErr);
-fs.copyFile('./src/module/igc-parser.js','./dist/js/igc-parser-dev.js',callbackErr);
-fs.copyFile('./src/module/gpx-parser.js','./dist/js/gpx-parser-dev.js',callbackErr);
+copyFilterMinify('./src/trackjoiner/trackjoiner.js', './dist/js/trackjoiner-dev.js', './dist/js/trackjoiner.js', /export.*/g, '//removed export');
+browserifyFile('./src/trackjoiner/fit-parser/dist/fit-parser.js','./src/trackjoiner/fit-parser/dist/fit-parser-babelized.js', './dist/js/fit-parser-dev.js', './dist/js/fit-parser.js');
+browserifyFile('./src/trackjoiner/gpx-parse/lib/gpx-parse.js','./src/trackjoiner/gpx-parse/lib/gpx-parse-babelized.js', './dist/js/gpx-parser-dev.js', './dist/js/gpx-parser.js');
+browserifyFile('./src/trackjoiner/igc-parser/index.js','./src/trackjoiner/igc-parser/index-babelized.js', './dist/js/igc-parser-dev.js', './dist/js/igc-parser.js');
+fs.copyFile('./public/css/blue.css', './dist/css/blue.css', callbackErr);
+fs.copyFile('./public/legacy.html', './dist/legacy.html', callbackErr);
+
 
