@@ -6,7 +6,7 @@
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build --report && node uglify.js",
-    "build-cf": "git fetch --recurse-submodules && vue-cli-service build  --report && node uglify.js",
+    "build-cf": "vue-cli-service build  --report && node uglify.js",
     "uglify": "node uglify.js",
     "lint": "vue-cli-service lint"
   },
