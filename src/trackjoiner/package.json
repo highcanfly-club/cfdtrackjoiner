@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "echo \"Error: no build specified\"",
-    "postinstall": "cd ./igc-parser && pwd && yarn build"
+    "postinstall": "cd ./igc-parser && pwd && npm run build"
   },
   "keywords": [],
   "author": "Ronan Le Meillat",
