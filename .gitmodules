@@ -1,0 +1,9 @@
+[submodule "src/trackjoiner/igc-parser"]
+	path = src/trackjoiner/igc-parser
+	url = git@github.com:eltorio/igc-parser.git
+[submodule "src/trackjoiner/fit-parser"]
+	path = src/trackjoiner/fit-parser
+	url = git@github.com:eltorio/fit-parser.git
+[submodule "src/trackjoiner/gpx-parse"]
+	path = src/trackjoiner/gpx-parse
+	url = git@github.com:eltorio/gpx-parse.git

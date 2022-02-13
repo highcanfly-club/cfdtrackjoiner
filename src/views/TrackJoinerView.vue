@@ -445,7 +445,8 @@ import {
   igcProducer,
   integrateInPreviousTrack,
   getTrackASIgcString,
-} from "@/module/trackjoiner.js";
+} from "trackjoiner";
+import { nSQL } from "@nano-sql/core";
 
 const state = reactive({
   rows: [],
@@ -570,34 +571,21 @@ export default {
   },
   setup() {
     state.isLoading = true;
-    let promiseNanoSql = loadScript(
-      "https://cdn.jsdelivr.net/npm/@nano-sql/core@2.3.7/dist/nano-sql.min.js"
-    );
+ /*   window.IGCParser = IGCParser;
+    window.FitParser = FitParser;
+    window.GpxParser = GpxParser;
+    window.nSQL = nSQL;*/
+
     let promiseCryptoJs = loadScript(
       "https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"
-    );
-    let promiseIgcParser = loadScript(
-      "https://cfdmv.highcanfly.club/js/igc-parser.js"
-    );
-    let promiseFitParser = loadScript(
-      "https://cfdmv.highcanfly.club/js/fit-parser.js"
-    );
-    let promiseGpxParser = loadScript(
-      "https://cfdmv.highcanfly.club/js/gpx-parser.js"
-    );
-    
+    );   
 
     Promise.all([
-      promiseNanoSql,
       promiseCryptoJs,
-      promiseIgcParser,
-      promiseFitParser,
-      promiseGpxParser,
     ]).then(() => {
       state.isLoading = false;
-      if (window.nSQL().listDatabases().length)
-        window
-          .nSQL()
+      if (nSQL().listDatabases().length)
+        nSQL()
           .dropDatabase("cdfmv_db")
           .then(() => {
             initDB();
