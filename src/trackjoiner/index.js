@@ -1,8 +1,8 @@
 import { nSQL } from "@nano-sql/core";
 
-import IGCParser from "igc-parser";
-import {FitParser} from "fit-parser";
-import {parseGpx} from "gpx-parser";
+import IGCParser from "./igc-parser";
+import {FitParser} from "./fit-parser";
+import {parseGpx} from "./gpx-parse";
 import {
     nanoDB_name,
     initDB,
