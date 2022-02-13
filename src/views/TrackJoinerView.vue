@@ -496,28 +496,6 @@ let getTrack = function (trackId, target) {
   });
 };
 
-let loadScript = function (src) {
-  return new Promise(function (resolve, reject) {
-    const s = document.createElement("script");
-    let r = false;
-    s.type = "text/javascript";
-    s.src = src;
-    s.async = true;
-    s.onerror = function (err) {
-      reject(err, s);
-    };
-    s.onload = s.onreadystatechange = function () {
-      // console.log(this.readyState); // uncomment this line to see which ready states are called.
-      if (!r && (!this.readyState || this.readyState == "complete")) {
-        r = true;
-        resolve();
-      }
-    };
-    const t = document.getElementsByTagName("script")[0];
-    t.parentElement.insertBefore(s, t);
-  });
-};
-
 export default {
   data() {
     const isHashVisible = false;
@@ -541,7 +519,7 @@ export default {
     },
     clickJoin() {
       state.isLoading = true;
-      var tracksQueryPromise = getDBTracksRowsAsPromise(); 
+      var tracksQueryPromise = getDBTracksRowsAsPromise();
       var fixesQueryPromise = getDBFixesRowsAsPromise();
       Promise.all([tracksQueryPromise, fixesQueryPromise])
         .then(promisedstate)
@@ -571,27 +549,17 @@ export default {
   },
   setup() {
     state.isLoading = true;
- /*   window.IGCParser = IGCParser;
-    window.FitParser = FitParser;
-    window.GpxParser = GpxParser;
-    window.nSQL = nSQL;*/
-
-    let promiseCryptoJs = loadScript(
-      "https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"
-    );   
-
-    Promise.all([
-      promiseCryptoJs,
-    ]).then(() => {
+    if (nSQL().listDatabases().length)
+      nSQL()
+        .dropDatabase("cdfmv_db")
+        .then(() => {
+          initDB();
+          state.isLoading = false;
+        });
+    else {
+      initDB();
       state.isLoading = false;
-      if (nSQL().listDatabases().length)
-        nSQL()
-          .dropDatabase("cdfmv_db")
-          .then(() => {
-            initDB();
-          });
-      else initDB();
-    });
+    }
   },
   components: {
     Dialog,
