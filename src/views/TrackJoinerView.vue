@@ -406,7 +406,7 @@
                   class="absolute bottom-0 pl-1 pb-1 text-xs text-blue-500 hover:text-blue-900"
                 >
                   <a href="https://www.highcanfly.club"
-                    >© High Can Fly parapente</a
+                    >© High Can Fly parapente <span class="text-slate-300" v-html="commit_date"/></a
                   >
                 </div>
               </div>
@@ -501,6 +501,13 @@ export default {
     const isHashVisible = false;
     const slideOpen = ref(this.$route.params.help ? true : false);
     return {
+      commit_date: new Intl.DateTimeFormat("fr-FR", {
+                          year: "numeric",
+                          month: "short",
+                          day: "2-digit",
+                          hour: "numeric",
+                          minute: "numeric",
+                        }).format(new Date(process.env.VUE_APP_GIT_TRACKJOINER_LAST_COMMIT)),
       state,
       trackTypes,
       openFile,
