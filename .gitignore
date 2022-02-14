@@ -26,3 +26,5 @@ yarn.lock
 src/trackjoiner/fit-parser-legacy-babelized.js
 src/trackjoiner/gpx-parse-legacy-babelized.js
 src/trackjoiner/igc-parser-legacy-babelized.js
+commit.json
+package-lock.json

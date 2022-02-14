@@ -33,7 +33,8 @@
     "tailwindcss": "^3.0.21",
     "typescript": "4.5.5",
     "browserify":"^17.0.0",
-    "@babel/preset-env":"^7.16.11"
+    "@babel/preset-env":"^7.16.11",
+    "gitlog": "^4.0.4"
   },
   "eslintConfig": {
     "root": true,
