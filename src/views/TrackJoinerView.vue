@@ -224,7 +224,7 @@
         :disabled="state.isLoading || state.overlapped_rows.length"
         :class="
           state.overlapped_rows.length
-            ? 'bg-slate-200 hover:bg-slate-200git stat'
+            ? 'bg-slate-200 hover:bg-slate-200 stat'
             : ''
         "
       >
