@@ -339,7 +339,7 @@
                 </div>
               </TransitionChild>
               <div
-                class="h-full flex flex-col py-6 bg-white shadow-xl overflow-y-scroll shadow"
+                class="h-full flex flex-col py-6 bg-white shadow-xl overflow-y-scroll"
               >
                 <div class="px-4 sm:px-6">
                   <DialogTitle class="text-lg font-medium text-gray-900">
@@ -388,7 +388,7 @@
                     ><br />Dans la barre de titre sert à afficher l'identifiant
                     unique de la trace.<br /><br />
                     <span
-                      class="text-right text-sm font-medium font-bold text-blue-700 uppercase"
+                      class="text-right text-sm font-bold text-blue-700 uppercase"
                       ><i class="fas fa-tools"></i>&nbsp;<i
                         class="fas fa-download"
                       ></i></span
