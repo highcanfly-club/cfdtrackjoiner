@@ -20,6 +20,11 @@ fs.writeFile('./commit.json', JSON.stringify(
            );
 
 module.exports = {
+  pages:{
+    index:{
+      entry:'src/main.js'
+    }
+  },
   runtimeCompiler: true,
   configureWebpack: {
     devtool: process.env.CF_PAGES==='1'?false:'eval-source-map',
