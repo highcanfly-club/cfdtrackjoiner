@@ -1,3 +1,2 @@
-import {parseGpx} from "gpx-parser";
-const GPXParser = {parseGpx: parseGpx};
-window.GPXParser = GPXParser;
+import gpxParser from "gpxparser";
+window.GPXParser = gpxParser;

@@ -73,29 +73,29 @@ var insertIGCTrackInDB = function (igcTrack, hashHex, fileName, trackType, onDBI
 // Insert on GPX track parsed with GPXParser (data.tracks[0].segments[0])
 // header goes in tracks , gps points in fixes
 var insertGPXTrackInDB = function (gpxTrack, hashHex, fileName, trackType, onDBInsertOKCallback) {
-  var gpxDate = gpxTrack[0].time;
-  var isoDt_start = gpxTrack[0].time;
+  var gpxDate = gpxTrack.points[0].time;
+  var isoDt_start = gpxTrack.points[0].time;
   var unixTs_start = isoDt_start.getTime();
-  var isoDt_end = gpxTrack[gpxTrack.length - 1].time;
+  var isoDt_end = gpxTrack.points[gpxTrack.points.length - 1].time;
   var unixTs_end = isoDt_end.getTime();
   nSQL().useDatabase(nanoDB_name);
   nSQL("tracks")
-    .query("upsert", [{ id: hashHex, dt_start: isoDt_start, ts_start: unixTs_start, dt_end: isoDt_end, ts_end: unixTs_end, nb_fixes: gpxTrack.length, name: fileName, type: trackType, gliderType: "" }])
+    .query("upsert", [{ id: hashHex, dt_start: isoDt_start, ts_start: unixTs_start, dt_end: isoDt_end, ts_end: unixTs_end, nb_fixes: gpxTrack.points.length, name: fileName, type: trackType, gliderType: "" }])
     .exec().then(() => {
       onDBInsertOKCallback();
     }).catch((error) => {
       console.log(error.toString());
     });
-  for (var i = 0; i < gpxTrack.length; i++) {
+  for (var i = 0; i < gpxTrack.points.length; i++) {
 
     nSQL("fixes")
       .query("upsert", [{
         track_id: hashHex,
-        point: { lat: gpxTrack[i].lat, lon: gpxTrack[i].lon },
-        gpsAltitude: gpxTrack[i].elevation,
-        preciseAltitude: gpxTrack[i].elevation,
-        dt: gpxTrack[i].time.toISOString(),
-        ts: gpxTrack[i].time.getTime(),
+        point: { lat: gpxTrack.points[i].lat, lon: gpxTrack.points[i].lon },
+        gpsAltitude: gpxTrack.points[i].ele,
+        preciseAltitude: gpxTrack.points[i].ele,  //no precise altitude on GPX
+        dt: gpxTrack.points[i].time.toISOString(),
+        ts: gpxTrack.points[i].time.getTime(),
         type: trackType //WIP use IGC for hike
       }])
       .exec().then(() => {
@@ -242,10 +242,9 @@ var openGPXFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
     var hash = CryptoJS.SHA256(gpxText);
     var hashHex = hash.toString(CryptoJS.enc.Hex);
     console.log(fileName);
-    GPXParser.parseGpx(gpxText, function (error, data) {
-      var gpxTrack = data.tracks[0].segments[0]; // TODO Allow multitrack
-      insertGPXTrackInDB(gpxTrack, hashHex, fileName, trackType, onDBInsertOKCallback);
-    });
+    let gpxParser = new window.GPXParser()
+    gpxParser.parse(gpx);
+    insertGPXTrackInDB(gpxParser.tracks[0], hashHex, fileName, trackType, onDBInsertOKCallback);
   });
   reader.readAsText(file);
 }
@@ -275,7 +274,7 @@ var openFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
         fitParser.parse(fileContent, function (error, data) {
           // Handle result of parse method
           if (error) {
-            alert("Une erreur s'est produite : FITParser "+error.message);
+            alert("Une erreur s'est produite : FITParser " + error.message);
             console.log(error);
           } else {
             insertFITTrackInDB(data, hashHex, fileName, trackType, onDBInsertOKCallback);
@@ -286,16 +285,15 @@ var openFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
         insertIGCTrackInDB(window.IGCParser.parse(fileContent), hashHex, fileName, trackType, onDBInsertOKCallback);
         break;
       case "GPX":
-        window.GPXParser.parseGpx(fileContent, function (error, data) {
-          if (data != null) {
-            var gpxTrack = data.tracks[0].segments[0]; // TODO Allow multitrack
-            insertGPXTrackInDB(gpxTrack, hashHex, fileName, trackType, onDBInsertOKCallback);
-          } else {
-            alert("Une erreur s'est produite : GPXParser "+error.message);
-            console.log ("GPXParser "+error.message);
-            console.log (error);
-          }
-        });
+        let gpxParser = new window.GPXParser();
+        gpxParser.parse(fileContent);
+
+        if (gpxParser.tracks[0].points.length > 0) {
+          insertGPXTrackInDB(gpxParser.tracks[0], hashHex, fileName, trackType, onDBInsertOKCallback);
+        } else {
+          alert("Une erreur s'est produite : GPXParser ");
+          console.log("Error: GPXParser ");
+        }
         break;
       default:
       //TODO don't do nothing !
@@ -690,7 +688,7 @@ var getDBTrackRowAsPromise = function (trackId) {
 var getDBFirstGliderType = function () {
   return new Promise(function (resolve, reject) {
     nSQL("tracks").query("select", ["gliderType"]).where([["gliderType.length", ">", 0], "AND", ["gliderType", "!=", IGC_GLIDER_TYPE]]).exec().then((rows) => {
-      if ( (typeof (rows[0]) != "undefined") && ((typeof (rows[0].gliderType) != "undefined") && (rows[0].gliderType != IGC_GLIDER_TYPE))) {
+      if ((typeof (rows[0]) != "undefined") && ((typeof (rows[0].gliderType) != "undefined") && (rows[0].gliderType != IGC_GLIDER_TYPE))) {
         resolve(rows[0].gliderType);
       } else {
         resolve(_DEFAULT_GLIDER_TYPE);
@@ -856,4 +854,4 @@ var integrateInPreviousTrack = function (trackId) {
 }
 
 
-export {nanoDB_name,initDB,getDBTracksRowsAsPromise,getDBFixesRowsAsPromise,getTrackASIgcString,getOverlappedRowsID,igcProducer,integrateInPreviousTrack,trackTypes,openFile};
+export { nanoDB_name, initDB, getDBTracksRowsAsPromise, getDBFixesRowsAsPromise, getTrackASIgcString, getOverlappedRowsID, igcProducer, integrateInPreviousTrack, trackTypes, openFile };

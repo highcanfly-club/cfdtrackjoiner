@@ -5,15 +5,14 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "build": "echo \"Error: no build specified\"",
-    "postinstall": "cd ./igc-parser && pwd && npm run build"
+    "build": "echo \"Error: no build specified\""
   },
   "keywords": [],
   "author": "Ronan Le Meillat",
   "license": "MIT",
   "dependencies": {
+    "gpxparser":"^3.0.8",
     "fit-parser": "file:./fit-parser",
-    "gpx-parser": "file:./gpx-parse",
     "igc-parser": "file:./igc-parser",
     "@nano-sql/core": "^2.3.7",
     "crypto-js": "^4.1.1"
