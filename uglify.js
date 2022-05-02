@@ -59,13 +59,18 @@ function minify(fin, fout) {
         return;
       }
       var result = UglifyJS.minify(data);
-      fs.writeFile(fout, result.code, function (err) {
-        if (err) {
-          reject(console.log(err));
-        } else {
-          resolve(result);
-        }
-      });
+      if (result.code !== undefined) {
+        fs.writeFile(fout, result.code, function (err) {
+          if (err) {
+            reject(console.log(err));
+          } else {
+            resolve(result);
+          }
+        });
+      } else {
+        console.log(result.error);
+        reject(result.error);
+      }
     });
   })
 }
@@ -114,15 +119,15 @@ compileTypeScript('./src/trackjoiner/igc-parser/index.ts', './src/trackjoiner/ig
         console.log('deleted ./src/trackjoiner/igc-parser/index.js');
       });
   });
-  
+
 browserifyFile('./src/trackjoiner/fit-parser-legacy.js', './src/trackjoiner/fit-parser-legacy-babelized.js', './dist/js/fit-parser-dev.js', './dist/js/fit-parser.js')
   .then(() => {
     console.log('browserified fit to ./dist/js/fit-parser.js');
   });
 
 browserifyFile('./src/trackjoiner/gpx-parser-legacy.js', './src/trackjoiner/gpx-parse-legacy-babelized.js', './dist/js/gpx-parser-dev.js', './dist/js/gpx-parser.js')
-.then(() => { 
-  console.log('browserified gpx to ./dist/js/gpx-parser.js');
- });
+  .then(() => {
+    console.log('browserified gpx to ./dist/js/gpx-parser.js');
+  });
 
 
