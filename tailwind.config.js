@@ -9,6 +9,7 @@ module.exports = {
     "./src/**/*.vue",
     "./src/*.vue",
   ],
+  safelist: (process.env.CF_PAGES === "1") ? [] : [{ pattern: /.*/ }],
   theme: {
 
     extend: {

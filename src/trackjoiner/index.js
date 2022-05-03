@@ -5,17 +5,8 @@ import { FitParser } from "./fit-parser";
 import gpxParser from "gpxparser";
 
 import {
-  nanoDB_name,
-  initDB,
-  trackTypes,
-  openFile,
-  getDBTracksRowsAsPromise,
-  getDBFixesRowsAsPromise,
-  getOverlappedRowsID,
-  igcProducer,
-  integrateInPreviousTrack,
-  getTrackASIgcString,
-} from "./trackjoiner.js";
+  changePartOfTrackType, changeTrackType, initDB, fixErroneousDT, getDBTracksRowsAsPromise, getDBFixesRowsAsPromise, getTrackASIgcString, getOverlappedRowsID, igcProducer, integrateInPreviousTrack, nanoDB_name, showDB, splitTrackIn2, splitTrackIn3, trackTypes, openFile }
+ from "./trackjoiner.js";
 
 window.GPXParser = gpxParser;
 window.IGCParser = IGCParser;
@@ -23,4 +14,4 @@ window.FitParser = FitParser;
 window.nSQL = nSQL;
 window.CryptoJS = CryptoJS;
 
-export { nanoDB_name, initDB, getDBTracksRowsAsPromise, getDBFixesRowsAsPromise, getTrackASIgcString, getOverlappedRowsID, igcProducer, integrateInPreviousTrack, trackTypes, openFile, IGCParser, FitParser, gpxParser, CryptoJS, nSQL };
+export { changePartOfTrackType, changeTrackType, initDB, fixErroneousDT, getDBTracksRowsAsPromise, getDBFixesRowsAsPromise, getTrackASIgcString, getOverlappedRowsID, igcProducer, integrateInPreviousTrack, nanoDB_name, showDB, splitTrackIn2, splitTrackIn3, trackTypes, openFile };

@@ -7,6 +7,10 @@
     * GPX Parser is adapted from Thibault Taillandier's project https://github.com/Wilkins/gpx-parse (Apache 2.0 license)
 */
 /* eslint-disable */
+// import { nSQL } from "@nano-sql/core";
+// import { CryptoJS } from "crypto-js";
+// import IGCParser from "igc-parser";
+// import FitParser from "fit-parser";
 
 const nanoDB_name = "cfdmv_db";
 const _DEFAULT_GLIDER_TYPE = "UNKOWN";
@@ -27,8 +31,14 @@ var igcDate2ISO8601 = function (igcDate, igcTime) {
   return jsDate;
 };
 
-// Insert on IGC track parsed with IGCParser
-// header goes in tracks , gps points in fixes
+/**
+ * Insert on IGC track parsed with IGCParser goes in tracks , gps points in fixes
+ * @param {*} igcTrack 
+ * @param {string} hashHex 
+ * @param {string} fileName  
+ * @param {*} trackType 
+ * @param {*} onDBInsertOKCallback 
+ */
 var insertIGCTrackInDB = function (igcTrack, hashHex, fileName, trackType, onDBInsertOKCallback) {
   var igcDate = igcTrack.date;
   igc_glider_type = ((typeof (igcTrack.gliderType) != "undefined") && (igcTrack.gliderType.length > 0)) ? igcTrack.gliderType : IGC_GLIDER_TYPE;
@@ -70,8 +80,15 @@ var insertIGCTrackInDB = function (igcTrack, hashHex, fileName, trackType, onDBI
 
 };
 
-// Insert on GPX track parsed with GPXParser (data.tracks[0].segments[0])
-// header goes in tracks , gps points in fixes
+/**
+* Insert on GPX track parsed with GPXParser (data.tracks[0].segments[0])
+* header goes in tracks , gps points in fixes
+ * @param {*} gpxTrack 
+ * @param {string} hashHex 
+ * @param {string} fileName  
+ * @param {*} trackType 
+ * @param {*} onDBInsertOKCallback 
+ */
 var insertGPXTrackInDB = function (gpxTrack, hashHex, fileName, trackType, onDBInsertOKCallback) {
   var gpxDate = gpxTrack.points[0].time;
   var isoDt_start = gpxTrack.points[0].time;
@@ -108,11 +125,20 @@ var insertGPXTrackInDB = function (gpxTrack, hashHex, fileName, trackType, onDBI
   }
 };
 
-// Insert on FIT track parsed with FITParser
-// header goes in tracks , gps points in fixes
-// TO BE CHECKED :
-// the only altitude my Fenix 6 gives is "enhanced_altitude" not sure all watches have this field
-// TO DO : find a basic watch without barometer for seing wich altitude it gives
+
+
+/**
+* Insert on FIT track parsed with FITParser
+* header goes in tracks , gps points in fixes
+* TO BE CHECKED :
+* the only altitude my Fenix 6 gives is "enhanced_altitude" not sure all watches have this field
+* TO DO : find a basic watch without barometer for seing wich altitude it gives
+ * @param {*} fitTrack 
+ * @param {string} hashHex 
+ * @param {string} fileName  
+ * @param {*} trackType 
+ * @param {*} onDBInsertOKCallback 
+ */
 var insertFITTrackInDB = function (fitTrack, hashHex, fileName, trackType, onDBInsertOKCallback) {
   var unixTs_start = fitTrack.records[0].timestamp.getTime();
   var unixTs_end = fitTrack.records[fitTrack.records.length - 1].timestamp.getTime();
@@ -144,12 +170,20 @@ var insertFITTrackInDB = function (fitTrack, hashHex, fileName, trackType, onDBI
   }
 };
 
-// basic path removal (works for windows/unices)
+/**
+ * basic path removal (works for windows/unices)
+ * @param {string} fullPath 
+ * @returns 
+ */
 var getFileName = function (fullPath) {
   return fullPath.replace(/^.*[\\\/]/, '');
 };
 
-// basic file Extension (return file name if there is no extension) // TODO better handling
+/**
+ * basic file Extension (return file name if there is no extension) // TODO better handling
+ * @param {string} fileName  
+ * @returns 
+ */
 var getFileExtension = function (fileName) {
   return fileName.split('.').pop().split(/\#|\?/)[0].toUpperCase();
 };
@@ -164,7 +198,12 @@ var arrayBufferToWordArray = function (ab) {
   return CryptoJS.lib.WordArray.create(a, i8a.length);
 };
 
-// Single file reception (with on FileReader), on event:load parse and insert in DB
+/**
+ * Single file reception (with on FileReader), on event:load parse and insert in DB
+ * @param {*} file 
+ * @param {*} trackType 
+ * @param {*} onDBInsertOKCallback 
+ */
 var openIGCFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
   var reader = new FileReader();
   reader.addEventListener("load", function (event) {
@@ -179,7 +218,12 @@ var openIGCFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
   reader.readAsText(file);
 };
 
-// Basically creates one openIGCFileTreatSingle per file (on multiple selection)
+/**
+ * Basically creates one openIGCFileTreatSingle per file (on multiple selection)
+ * @param {*} event 
+ * @param {string} trackType 
+ * @param {Function} onDBInsertOKCallback 
+ */
 var openIGCFile = function (event, trackType, onDBInsertOKCallback) {
   var input = event.target;
   var files = input.files;
@@ -188,10 +232,14 @@ var openIGCFile = function (event, trackType, onDBInsertOKCallback) {
     var file = files[i];
     openIGCFileTreatSingle(file, trackType, onDBInsertOKCallback);
   }
-
 };
 
-// Single file reception (with on FileReader), on event:load parse and insert in DB
+/**
+ * Single file reception (with on FileReader), on event:load parse and insert in DB
+ * @param {*} file 
+ * @param {*} trackType 
+ * @param {*} onDBInsertOKCallback 
+ */
 var openFITFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
   var fitParser = new FitParser({
     force: true,
@@ -221,7 +269,12 @@ var openFITFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
   reader.readAsArrayBuffer(file);
 }
 
-// Basically creates one openFITFileTreatSingle per file (on multiple selection)
+/**
+ * Basically creates one openFITFileTreatSingle per file (on multiple selection)
+ * @param {*} event 
+ * @param {*} trackType 
+ * @param {*} onDBInsertOKCallback 
+ */
 var openFITFile = function (event, trackType, onDBInsertOKCallback) {
   var input = event.target;
   var files = input.files;
@@ -232,7 +285,12 @@ var openFITFile = function (event, trackType, onDBInsertOKCallback) {
   }
 };
 
-// Single file reception (with on FileReader), on event:load parse and insert in DB
+/**
+ * Single file reception (with on FileReader), on event:load parse and insert in DB
+ * @param {*} file 
+ * @param {*} trackType 
+ * @param {*} onDBInsertOKCallback 
+ */
 var openGPXFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
   var reader = new FileReader();
   reader.addEventListener("load", function (event) {
@@ -243,14 +301,19 @@ var openGPXFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
     var hashHex = hash.toString(CryptoJS.enc.Hex);
     console.log(fileName);
     let gpxParser = new window.GPXParser()
-    gpxParser.parse(gpx);
+    gpxParser.parse(gpxText);
     insertGPXTrackInDB(gpxParser.tracks[0], hashHex, fileName, trackType, onDBInsertOKCallback);
   });
   reader.readAsText(file);
 }
 
-//  Single file reception (with on FileReader), on event:load parse and insert in DB
-// Generic version
+/**
+ * Single file reception (with on FileReader), on event:load parse and insert in DB
+ * Generic versio
+ * @param {*} file 
+ * @param {*} trackType 
+ * @param {*} onDBInsertOKCallback 
+ */
 var openFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
   var reader = new FileReader();
   var fileName = getFileName(file.name);
@@ -308,7 +371,12 @@ var openFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
   }
 }
 
-// Basically creates one openGPXFileTreatSingle per file (on multiple selection)
+/**
+ * Basically creates one openGPXFileTreatSingle per file (on multiple selection)
+ * @param {*} event 
+ * @param {*} trackType 
+ * @param {*} onDBInsertOKCallback 
+ */
 var openFile = function (event, trackType, onDBInsertOKCallback) {
   var input = event.target;
   var files = input.files;
@@ -319,7 +387,12 @@ var openFile = function (event, trackType, onDBInsertOKCallback) {
   }
 };
 
-// Basically creates one openGPXFileTreatSingle per file (on multiple selection)
+/**
+ * Basically creates one openGPXFileTreatSingle per file (on multiple selection)
+ * @param {*} event 
+ * @param {*} trackType 
+ * @param {*} onDBInsertOKCallback 
+ */
 var openGPXFile = function (event, trackType, onDBInsertOKCallback) {
   var input = event.target;
   var files = input.files;
@@ -329,8 +402,11 @@ var openGPXFile = function (event, trackType, onDBInsertOKCallback) {
     openGPXFileTreatSingle(file, trackType, onDBInsertOKCallback);
   }
 };
-// drop DB if exists (on some browser even in-memory persists)
-// next creates the 2 tables in memory
+
+/**
+ * drop DB if exists (on some browser even in-memory persists)
+ * next creates the 2 tables in memory
+ */
 var initDB = function () {
   // Database creation
   nSQL().dropDatabase(nanoDB_name).then(() => {
@@ -394,14 +470,23 @@ var initDB = function () {
   nSQL().useDatabase(nanoDB_name);
 };
 
-//add milliseconds to Date object
+/**
+ * add milliseconds to Date object
+ * @param {*} ts 
+ * @param {*} dateObject 
+ * @returns 
+ */
 var addTimestampToDateObject = function (ts, dateObject) {
   var oDate = new Date();
   oDate.setTime(dateObject.getTime() + ts);
   return oDate;
 }
 
-//fixErroneusDT given trackID and realDTStart wich is a Date() object
+/**
+ * fixErroneusDT given trackID and realDTStart wich is a Date() object
+ * @param {string} trackId  
+ * @param {*} realDTStart 
+ */
 var fixErroneousDT = function (trackId, realDTStart) {
   getDBTrackRowAsPromise(trackId).then(track => {
     var Δt = realDTStart.getTime() - (new Date(track[0].dt_start)).getTime();
@@ -423,8 +508,13 @@ var fixErroneousDT = function (trackId, realDTStart) {
   });
 }
 
-//insert an array of fixes (probably created with an nSQL query)
-//return a Promise with the number of fixes inserted
+/**
+ * insert an array of fixes (probably created with an nSQL query)
+ * return a Promise with the number of fixes inserted
+ * @param {string} trackId 
+ * @param {*} fixesArray 
+ * @returns 
+ */
 var insertFixesArrayInDB = function (trackId, fixesArray) {
   return new Promise(function (resolve, reject) {
     let promisedAll = [];
@@ -444,14 +534,25 @@ var insertFixesArrayInDB = function (trackId, fixesArray) {
   });
 }
 
-//cut track in 2 segments
-//return a Promise with an array containing the new trackIds
+/**
+ * cut track in 2 segments
+ * return a Promise with an array containing the new trackIds
+ * @param {string} trackId  
+ * @param {*} dt_cut 
+ * @returns 
+ */
 var splitTrackIn2 = function (trackId, dt_cut) {
   return splitTrackIn3(trackId, dt_cut, dt_cut);
 }
 
-//cut track in 3 segments (or 2 if dt_cut_1==dt_cut_2 )
-//return a Promise with an array containing the new trackIds
+/**
+ * cut track in 3 segments (or 2 if dt_cut_1==dt_cut_2 )
+ * return a Promise with an array containing the new trackIds
+ * @param {string} trackId  
+ * @param {Date} dt_cut_1 
+ * @param {Date} dt_cut_2 
+ * @returns 
+ */
 var splitTrackIn3 = function (trackId, dt_cut_1, dt_cut_2) {
   return new Promise(function (resolve, reject) {
     var P1FixesInsertedPromise = 0;
@@ -543,11 +644,18 @@ var splitTrackIn3 = function (trackId, dt_cut_1, dt_cut_2) {
   });
 }
 
-//split trackId in 2 or 3 parts P1, P2, P3 (can be only P1 and P2)
-//if ansiXOR((dt_start == trackRow.dt_start) , (dt_end == trackRow.dt_end)) -> only P1 and P2
-//if ((dt_start == trackRow.dt_start) && (dt_end == trackRow.dt_end)) -> change the whole track
-//if ((dt_start > trackRow.dt_start) && (dt_end < trackRow.dt_end)) -> P1, P2, P3
-//return a Promise with value containing an array of the new IDs
+/**
+ * split trackId in 2 or 3 parts P1, P2, P3 (can be only P1 and P2)
+ * if ansiXOR((dt_start == trackRow.dt_start) , (dt_end == trackRow.dt_end)) -> only P1 and P2
+ * if ((dt_start == trackRow.dt_start) && (dt_end == trackRow.dt_end)) -> change the whole track
+ * if ((dt_start > trackRow.dt_start) && (dt_end < trackRow.dt_end)) -> P1, P2, P3
+ * return a Promise with value containing an array of the new IDs
+ * @param {string} trackId 
+ * @param {Date} dt_start 
+ * @param {Date} dt_end 
+ * @param {string} new_type 
+ * @returns 
+ */
 var changePartOfTrackType = function (trackId, dt_start, dt_end, new_type) {
   return new Promise(function (resolve, reject) {
     getDBTrackRowAsPromise(trackId).then(rows => {
@@ -589,8 +697,12 @@ var changePartOfTrackType = function (trackId, dt_start, dt_end, new_type) {
   });
 }
 
-
-// Change track type
+/**
+ * Change track type
+ * @param {string} trackId  
+ * @param {*} new_type 
+ * @returns 
+ */
 var changeTrackType = function (trackId, new_type) {
   return new Promise(function (resolve, reject) {
     let tracksPromise = nSQL("tracks").query("upsert", [{ type: new_type }]).where(["id", "=", trackId]).exec();
@@ -599,12 +711,16 @@ var changeTrackType = function (trackId, new_type) {
   });
 }
 
-//Cut overlapping
-// Insert A in B , 
-// if A is in B
-// extract B1 from B start to A start keeping Fly or Hike flag
-// extract B2 from A end to B end keeping Fly or Hike flag
-// return a Promise with filled value with an array containing the 2 new trackId as string
+/**
+ * Cut overlapping
+ * Insert A in B , 
+ * if A is in B
+ * extract B1 from B start to A start keeping Fly or Hike flag
+ * extract B2 from A end to B end keeping Fly or Hike flag
+ * @param {*} track_A_id 
+ * @param {*} track_B_id 
+ * @returns  a Promise with filled value with an array containing the 2 new trackId as string
+ */
 var cutOverlapping = function (track_A_id, track_B_id) {
   return new Promise(function (resolve, reject) {
     var A_promise = getDBTrackRowAsPromise(track_A_id);
@@ -674,17 +790,28 @@ var cutOverlapping = function (track_A_id, track_B_id) {
   });
 }
 
-//return all fixes for one track as Promise given it id
+/**
+ * 
+ * @param {string} trackId  
+ * @returns all fixes for one track as Promise given it id
+ */
 var getDBFixesTrackRowAsPromise = function (trackId) {
   return nSQL("fixes").query("select").where(["track_id", "=", trackId]).exec();
 }
 
-//return single track as Promise given it id
+/**
+ * 
+ * @param {string} trackId  
+ * @returns single track as Promise given it id
+ */
 var getDBTrackRowAsPromise = function (trackId) {
   return nSQL("tracks").query("select").where(["id", "=", trackId]).exec();
 }
 
-//return first gliderType if any
+/**
+ * 
+ * @returns first gliderType if any
+ */
 var getDBFirstGliderType = function () {
   return new Promise(function (resolve, reject) {
     nSQL("tracks").query("select", ["gliderType"]).where([["gliderType.length", ">", 0], "AND", ["gliderType", "!=", IGC_GLIDER_TYPE]]).exec().then((rows) => {
@@ -697,15 +824,28 @@ var getDBFirstGliderType = function () {
   });
 }
 
+/**
+ * 
+ * @param {string} trackId  
+ * @returns A promise with the first date
+ */
 var getDBTrackDTStartAsPromise = function (trackId) {
   return getDBTrackRowAsPromise(trackId).then((rows) => { return rows[0]["dt_start"]; });
 }
 
-//return all tracks as Promise
+/**
+ * 
+ * @returns return all tracks as Promise
+ */
 var getDBTracksRowsAsPromise = function () {
   return nSQL("tracks").query("select").orderBy(["ts_start ASC"]).exec();
 }
 
+/**
+ * 
+ * @param {string} trackId  
+ * @returns all points in a Promise
+ */
 var getDBFixesRowsAsPromise = function (trackId) {
   if (typeof (trackId) == "undefined") {
     return nSQL("fixes").query("select").orderBy(["dt ASC"]).exec();
@@ -715,14 +855,22 @@ var getDBFixesRowsAsPromise = function (trackId) {
 
 }
 
-//simple IGC Date formater
-// date is a javascript Date() object
+/**
+ * 
+ * @param {Date} date 
+ * @returns a date in IGC format
+ */
 var igcDateFormater = function (date) {
   var dateTimeFormat = new Intl.DateTimeFormat('en', { timeZone: 'UTC', year: '2-digit', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h24', minute: '2-digit', second: '2-digit' })
   var [{ value: month }, , { value: day }, , { value: year }] = dateTimeFormat.formatToParts(date)
   return `${day}${month}${year}`;
 };
 
+/**
+ * 
+ * @param {*} date 
+ * @returns a date in IGC format
+ */
 var igcTimeFormater = function (date) {
   var dateTimeFormat = new Intl.DateTimeFormat('en', { timeZone: 'UTC', hour: '2-digit', hourCycle: 'h24', minute: '2-digit', second: '2-digit' })
   var [{ value: hour }, , { value: minute }, , { value: second }] = dateTimeFormat.formatToParts(date)
@@ -732,6 +880,11 @@ var igcTimeFormater = function (date) {
   return `${hour}${minute}${second}`;
 }
 
+/**
+ * 
+ * @param {*} decimalLat 
+ * @returns a latitude in IGC format
+ */
 var igcLatFormater = function (decimalLat) {
   var hemisphere = (decimalLat >= 0) ? 'N' : 'S';
   var degrees = (Math.floor(Math.abs(decimalLat))).toLocaleString('en-US', { minimumIntegerDigits: 2, useGrouping: false });
@@ -739,6 +892,11 @@ var igcLatFormater = function (decimalLat) {
   return `${degrees}${minutes}${hemisphere}`;
 };
 
+/**
+ * 
+ * @param {*} decimalLon 
+ * @returns a longitude in IGC format
+ */
 var igcLonFormater = function (decimalLon) {
   var eastern = (decimalLon >= 0) ? 'E' : 'W';
   var degrees = (Math.floor(Math.abs(decimalLon))).toLocaleString('en-US', { minimumIntegerDigits: 3, useGrouping: false });
@@ -746,6 +904,11 @@ var igcLonFormater = function (decimalLon) {
   return `${degrees}${minutes}${eastern}`;
 };
 
+/**
+ * 
+ * @param {*} altitude 
+ * @returns an altitude converted to IGC format
+ */
 var igcAltitudeFormater = function (altitude) {
   if (altitude >= 0) {
     return `${(Math.round(altitude)).toLocaleString('en-US', { minimumIntegerDigits: 5, useGrouping: false })}`;
@@ -765,18 +928,33 @@ var getTrackASIgcString = function (trackId) {
 
 }
 
-//minimal headers for a valid IGC File
-// date is a javascript Date() object
+/**
+ * minimal headers for a valid IGC File
+ * date is a javascript Date() object
+ * @param {*} date 
+ * @returns minimal headers for a valid IGC File
+ */
 var igcHeaders = function (date) {
   return `AXCF034 French CFDMV pre-alpha track fusion\r\nHFDTE${igcDateFormater(date)}\r\nHFPLTPILOTINCHARGE:CFDMV\r\nHFCM2CREW2:NIL\r\nHFGTYGLIDERTYPE:${igc_glider_type}\r\nHFGIDGLIDERID:\r\nHFDTMGPSDATUM:WGS84\r\nHFRFWFIRMWAREVERSION:0\r\nHFRHWHARDWAREVERSION:\r\nHFFTYFRTYPE:TrackJoiner\r\nHFGPSRECEIVER:NIL\r\nHFPRSPRESSALTSENSOR:\r\n`;
 };
 
+/**
+ * 
+ * @param {*} type 
+ * @param {*} isStart 
+ * @returns an IGC comment
+ */
 var igcTypeCommentFormater = function (type, isStart) {
   var longType = (type == 'H') ? 'HIKE' : 'FLY';
   var longIsStart = isStart ? 'START' : 'END';
   return `LPLT${longType}${longIsStart}\r\n`;
 }
-//minimal IGC record formater
+
+/**
+ * 
+ * @param {*} row 
+ * @returns minimal IGC record formater
+ */
 var igcBRecordFormater = function (row) {
   var dt = new Date(row.dt);
   if (isNaN(row.point.lat) || isNaN(row.point.lon)) {
@@ -789,7 +967,11 @@ var igcBRecordFormater = function (row) {
   return `B${igcTimeFormater(dt)}${igc_lat}${igc_lon}A${igc_pressureAltitude}${igc_gpsAltitude}\r\n`;
 }
 
-//simple IGC file producer (input is a rows of points object)
+/**
+ * simple IGC file producer (input is a rows of points object)
+ * @param {*} rows 
+ * @returns 
+ */
 var igcProducer = function (rows) {
   var szReturn = igcHeaders(new Date(rows[0].dt));
   var lastType = '';
@@ -810,7 +992,11 @@ var igcProducer = function (rows) {
   return szReturn;
 }
 
-//detect if there is an overlap in the rows of tracks 
+/**
+ * detect if there is an overlap in the rows of tracks 
+ * @param {*} rows 
+ * @returns true if there is an overlap
+ */
 var isAnOverlapDetected = function (rows) {
   for (var i = 1; i < rows.length; i++) {
     if (rows[i - 1].ts_end > rows[i].ts_start) {
@@ -820,7 +1006,11 @@ var isAnOverlapDetected = function (rows) {
   return false;
 }
 
-//get an array of the overlapped rows id
+/**
+ * 
+ * @param {*} rows 
+ * @returns get an array of the overlapped rows id
+ */
 var getOverlappedRowsID = function (rows) {
   var retArray = [];
   for (var i = 1; i < rows.length; i++) {
@@ -831,9 +1021,13 @@ var getOverlappedRowsID = function (rows) {
   return retArray;
 }
 
-//integrate a row in its predecessor
-//all checks are done in cutOverlapping
-//return the cutOverlapping Promise or reject
+/**
+ * integrate a row in its predecessor
+ * all checks are done in cutOverlapping
+ * return the cutOverlapping Promise or reject
+ * @param {string} trackId  
+ * @returns 
+ */
 var integrateInPreviousTrack = function (trackId) {
   return new Promise(function (resolve, reject) {
     getDBTracksRowsAsPromise().then(promisedRows => {
@@ -853,5 +1047,23 @@ var integrateInPreviousTrack = function (trackId) {
   });
 }
 
+/**
+ * showDB the DB in console
+ */
+var showDB = function () {
+  getDBTracksRowsAsPromise().then((rows) => {
+    // selected rows
+    console.log(rows);
+  }).catch((error) => {
+    console.log(error.toString());
+  });
+  getDBFixesRowsAsPromise().then((rows) => {
+    // selected rows
+    console.log(rows);
+  }).catch((error) => {
+    console.log(error.toString());
+  });
+}
 
-export { nanoDB_name, initDB, getDBTracksRowsAsPromise, getDBFixesRowsAsPromise, getTrackASIgcString, getOverlappedRowsID, igcProducer, integrateInPreviousTrack, trackTypes, openFile };
+
+export { changePartOfTrackType, changeTrackType, initDB, fixErroneousDT, getDBTracksRowsAsPromise, getDBFixesRowsAsPromise, getTrackASIgcString, getOverlappedRowsID, igcProducer, integrateInPreviousTrack, nanoDB_name, showDB, splitTrackIn2, splitTrackIn3, trackTypes, openFile };
