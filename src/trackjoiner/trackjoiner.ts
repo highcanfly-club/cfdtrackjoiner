@@ -7,10 +7,12 @@
     * GPX Parser is adapted from Thibault Taillandier's project https://github.com/Wilkins/gpx-parse (Apache 2.0 license)
 */
 /* eslint-disable */
-// import { nSQL } from "@nano-sql/core";
-// import { CryptoJS } from "crypto-js";
-// import IGCParser from "igc-parser";
-// import FitParser from "fit-parser";
+import { nSQL } from "@nano-sql/core";
+import CryptoJS from "crypto-js";
+import IGCParser from "igc-parser";
+import {FitParser} from "fit-parser";
+import gpxParser from "gpxparser";
+
 
 const nanoDB_name = "cfdmv_db";
 const _DEFAULT_GLIDER_TYPE = "UNKOWN";
@@ -18,10 +20,10 @@ const IGC_GLIDER_TYPE = "TO-BE-FILLED";
 const FIT_DEFAULT_GLIDER_TYPE = "FIT-GLIDER";
 var igc_glider_type = IGC_GLIDER_TYPE;
 
-const trackTypes = { FLY: 'F', HIKE: 'H', MIXED: '' };
+enum trackTypes { FLY= 'F', HIKE= 'H', MIXED= '' };
 
 //still no XOR in EMEA JavaScript
-var ansiXOR = function (a, b) {
+var ansiXOR = function (a:boolean, b:boolean):boolean {
   return (a || b) && !(a && b);
 }
 
@@ -208,11 +210,11 @@ var openIGCFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
   var reader = new FileReader();
   reader.addEventListener("load", function (event) {
     var igcFile = event.target;
-    var text = igcFile.result;
+    var text = igcFile.result as string;
     var fileName = getFileName(file.name);
     var hash = CryptoJS.SHA256(text);
     var hashHex = hash.toString(CryptoJS.enc.Hex);
-    console.log("fileName:" + fileName + "\n" + igcFile.result.substring(0, 200) + "\nLXSB Last 100 chars\n" + igcFile.result.slice(-100));
+    console.log("fileName:" + fileName + "\n" + text.substring(0, 200) + "\nLXSB Last 100 chars\n" + text.slice(-100));
     insertIGCTrackInDB(IGCParser.parse(text), hashHex, fileName, trackType, onDBInsertOKCallback);
   });
   reader.readAsText(file);
@@ -295,14 +297,14 @@ var openGPXFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
   var reader = new FileReader();
   reader.addEventListener("load", function (event) {
     var gpxFile = event.target;
-    var gpxText = gpxFile.result;
+    var gpxText = gpxFile.result as string;
     var fileName = getFileName(file.name);
     var hash = CryptoJS.SHA256(gpxText);
     var hashHex = hash.toString(CryptoJS.enc.Hex);
     console.log(fileName);
-    let gpxParser = new window.GPXParser()
-    gpxParser.parse(gpxText);
-    insertGPXTrackInDB(gpxParser.tracks[0], hashHex, fileName, trackType, onDBInsertOKCallback);
+    let _gpxParser = new gpxParser()
+    _gpxParser.parse(gpxText);
+    insertGPXTrackInDB(_gpxParser.tracks[0], hashHex, fileName, trackType, onDBInsertOKCallback);
   });
   reader.readAsText(file);
 }
@@ -314,19 +316,19 @@ var openGPXFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
  * @param {*} trackType 
  * @param {*} onDBInsertOKCallback 
  */
-var openFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
+var openFileTreatSingle = function (file:File, trackType:string, onDBInsertOKCallback:Function) {
   var reader = new FileReader();
   var fileName = getFileName(file.name);
   var fileExtension = getFileExtension(fileName);
   reader.addEventListener("load", function (event) {
     var trackFile = event.target;
-    var fileContent = trackFile.result;
+    var fileContent = trackFile.result as string;
     var hash = (fileExtension == "FIT") ? CryptoJS.SHA256(arrayBufferToWordArray(fileContent)) : CryptoJS.SHA256(fileContent); // FIT format is binay
     var hashHex = hash.toString(CryptoJS.enc.Hex);
     console.log(fileName);
     switch (fileExtension) {
       case "FIT":
-        var fitParser = new window.FitParser({
+        var fitParser = new FitParser({
           force: true,
           speedUnit: 'km/h',
           lengthUnit: 'm',
@@ -345,14 +347,14 @@ var openFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
         });
         break;
       case "IGC":
-        insertIGCTrackInDB(window.IGCParser.parse(fileContent), hashHex, fileName, trackType, onDBInsertOKCallback);
+        insertIGCTrackInDB(IGCParser.parse(fileContent), hashHex, fileName, trackType, onDBInsertOKCallback);
         break;
       case "GPX":
-        let gpxParser = new window.GPXParser();
-        gpxParser.parse(fileContent);
+        let _gpxParser = new gpxParser();
+        _gpxParser.parse(fileContent);
 
-        if (gpxParser.tracks[0].points.length > 0) {
-          insertGPXTrackInDB(gpxParser.tracks[0], hashHex, fileName, trackType, onDBInsertOKCallback);
+        if (_gpxParser.tracks[0].points.length > 0) {
+          insertGPXTrackInDB(_gpxParser.tracks[0], hashHex, fileName, trackType, onDBInsertOKCallback);
         } else {
           alert("Une erreur s'est produite : GPXParser ");
           console.log("Error: GPXParser ");
@@ -513,9 +515,9 @@ var fixErroneousDT = function (trackId, realDTStart) {
  * return a Promise with the number of fixes inserted
  * @param {string} trackId 
  * @param {*} fixesArray 
- * @returns 
+ * @returns a number with number of fixes inserted
  */
-var insertFixesArrayInDB = function (trackId, fixesArray) {
+var insertFixesArrayInDB = function (trackId, fixesArray):Promise<number> {
   return new Promise(function (resolve, reject) {
     let promisedAll = [];
     for (var i = 0; i < fixesArray.length; i++) {
@@ -541,7 +543,7 @@ var insertFixesArrayInDB = function (trackId, fixesArray) {
  * @param {*} dt_cut 
  * @returns 
  */
-var splitTrackIn2 = function (trackId, dt_cut) {
+var splitTrackIn2 = function (trackId:string, dt_cut:Date):Promise<string[]> {
   return splitTrackIn3(trackId, dt_cut, dt_cut);
 }
 
@@ -553,14 +555,14 @@ var splitTrackIn2 = function (trackId, dt_cut) {
  * @param {Date} dt_cut_2 
  * @returns 
  */
-var splitTrackIn3 = function (trackId, dt_cut_1, dt_cut_2) {
+var splitTrackIn3 = function (trackId:string, dt_cut_1:Date, dt_cut_2:Date):Promise<string[]> {
   return new Promise(function (resolve, reject) {
-    var P1FixesInsertedPromise = 0;
-    var P2FixesInsertedPromise = 0;
-    var P3FixesInsertedPromise = 0;
-    var track_p1_id = "";
-    var track_p2_id = "";
-    var track_p3_id = "";
+    let P1FixesInsertedPromise:Promise<number> = null;
+    let P2FixesInsertedPromise:Promise<number> = null;
+    let P3FixesInsertedPromise:Promise<number> = null;
+    let track_p1_id:CryptoJS.lib.WordArray = null;
+    let track_p2_id:CryptoJS.lib.WordArray = null;
+    let track_p3_id:CryptoJS.lib.WordArray = null;
     getDBTrackRowAsPromise(trackId).then(rows => {
       var trackRow = rows[0];
       var ts_cut_1 = dt_cut_1.getTime();
@@ -581,7 +583,7 @@ var splitTrackIn3 = function (trackId, dt_cut_1, dt_cut_2) {
           var P2_fixes = promised[1];
           var P3_fixes = promised[2];
           igc_glider_type = promised[3];
-          let splittedId = [];
+          let splittedId:string[] = [];
           let promisedAll = [];
           if (P1_fixes.length > 0) {
             promisedAll.push(nSQL("tracks").query("upsert", [{
@@ -656,7 +658,7 @@ var splitTrackIn3 = function (trackId, dt_cut_1, dt_cut_2) {
  * @param {string} new_type 
  * @returns 
  */
-var changePartOfTrackType = function (trackId, dt_start, dt_end, new_type) {
+var changePartOfTrackType = function (trackId:string, dt_start:Date, dt_end:Date, new_type:trackTypes):Promise<string[]> {
   return new Promise(function (resolve, reject) {
     getDBTrackRowAsPromise(trackId).then(rows => {
       var trackRow = rows[0];
@@ -689,7 +691,7 @@ var changePartOfTrackType = function (trackId, dt_start, dt_end, new_type) {
           });
         } else {
           changeTrackType(trackId, new_type).then((retval) => {
-            resolve(value);
+            resolve([trackId]);
           });
         }
       }
@@ -703,11 +705,11 @@ var changePartOfTrackType = function (trackId, dt_start, dt_end, new_type) {
  * @param {*} new_type 
  * @returns 
  */
-var changeTrackType = function (trackId, new_type) {
+var changeTrackType = function (trackId:string, new_type:trackTypes):Promise<trackTypes> {
   return new Promise(function (resolve, reject) {
     let tracksPromise = nSQL("tracks").query("upsert", [{ type: new_type }]).where(["id", "=", trackId]).exec();
     let fixesPromise = nSQL("fixes").query("upsert", [{ type: new_type }]).where(["track_id", "=", trackId]).exec();
-    Promise.all([tracksPromise, fixesPromise]).then(resolve(new_type));
+    Promise.all([tracksPromise, fixesPromise]).then( () => resolve(new_type));
   });
 }
 
@@ -717,11 +719,11 @@ var changeTrackType = function (trackId, new_type) {
  * if A is in B
  * extract B1 from B start to A start keeping Fly or Hike flag
  * extract B2 from A end to B end keeping Fly or Hike flag
- * @param {*} track_A_id 
- * @param {*} track_B_id 
+ * @param {string} track_A_id 
+ * @param {string} track_B_id 
  * @returns  a Promise with filled value with an array containing the 2 new trackId as string
  */
-var cutOverlapping = function (track_A_id, track_B_id) {
+var cutOverlapping = function (track_A_id:string, track_B_id:string):Promise<string[]> {
   return new Promise(function (resolve, reject) {
     var A_promise = getDBTrackRowAsPromise(track_A_id);
     var B_promise = getDBTrackRowAsPromise(track_B_id);
@@ -739,11 +741,11 @@ var cutOverlapping = function (track_A_id, track_B_id) {
           nSQL().useDatabase(nanoDB_name);
           var B1_fixes_promise = nSQL("fixes").query("select").where([["track_id", "=", track_B_row.id], "AND", ["ts", "<", track_A_row.ts_start]]).exec();
           var B2_fixes_promise = nSQL("fixes").query("select").where([["track_id", "=", track_B_row.id], "AND", ["ts", ">", track_A_row.ts_end]]).exec();
-          igc_glider_type = getDBFirstGliderType();
-          Promise.all([B1_fixes_promise, B2_fixes_promise, igc_glider_type]).then(promisedDB_BRows => {
+          let igc_glider_type_promise = getDBFirstGliderType();
+          Promise.all([B1_fixes_promise, B2_fixes_promise, igc_glider_type_promise]).then(promisedDB_BRows => {
             let B1_fixes = promisedDB_BRows[0];
             let B2_fixes = promisedDB_BRows[1];
-            let gliderType = promisedDB_BRows[3];
+            let gliderType = promisedDB_BRows[2];
             var insertTrackB1 = nSQL("tracks").query("upsert", [{
               id: track_B1_id,
               dt_start: new Date(track_B_row.ts_start),
@@ -804,7 +806,7 @@ var getDBFixesTrackRowAsPromise = function (trackId) {
  * @param {string} trackId  
  * @returns single track as Promise given it id
  */
-var getDBTrackRowAsPromise = function (trackId) {
+var getDBTrackRowAsPromise = function (trackId:string) {
   return nSQL("tracks").query("select").where(["id", "=", trackId]).exec();
 }
 
@@ -812,8 +814,8 @@ var getDBTrackRowAsPromise = function (trackId) {
  * 
  * @returns first gliderType if any
  */
-var getDBFirstGliderType = function () {
-  return new Promise(function (resolve, reject) {
+var getDBFirstGliderType = function ():Promise<string> {
+  return new Promise<string>(function (resolve, reject) {
     nSQL("tracks").query("select", ["gliderType"]).where([["gliderType.length", ">", 0], "AND", ["gliderType", "!=", IGC_GLIDER_TYPE]]).exec().then((rows) => {
       if ((typeof (rows[0]) != "undefined") && ((typeof (rows[0].gliderType) != "undefined") && (rows[0].gliderType != IGC_GLIDER_TYPE))) {
         resolve(rows[0].gliderType);
@@ -829,7 +831,7 @@ var getDBFirstGliderType = function () {
  * @param {string} trackId  
  * @returns A promise with the first date
  */
-var getDBTrackDTStartAsPromise = function (trackId) {
+var getDBTrackDTStartAsPromise = function (trackId:string) {
   return getDBTrackRowAsPromise(trackId).then((rows) => { return rows[0]["dt_start"]; });
 }
 
@@ -846,7 +848,7 @@ var getDBTracksRowsAsPromise = function () {
  * @param {string} trackId  
  * @returns all points in a Promise
  */
-var getDBFixesRowsAsPromise = function (trackId) {
+var getDBFixesRowsAsPromise = function (trackId?:string) {
   if (typeof (trackId) == "undefined") {
     return nSQL("fixes").query("select").orderBy(["dt ASC"]).exec();
   } else {
@@ -860,7 +862,7 @@ var getDBFixesRowsAsPromise = function (trackId) {
  * @param {Date} date 
  * @returns a date in IGC format
  */
-var igcDateFormater = function (date) {
+var igcDateFormater = function (date:Date) {
   var dateTimeFormat = new Intl.DateTimeFormat('en', { timeZone: 'UTC', year: '2-digit', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h24', minute: '2-digit', second: '2-digit' })
   var [{ value: month }, , { value: day }, , { value: year }] = dateTimeFormat.formatToParts(date)
   return `${day}${month}${year}`;
@@ -871,10 +873,10 @@ var igcDateFormater = function (date) {
  * @param {*} date 
  * @returns a date in IGC format
  */
-var igcTimeFormater = function (date) {
+var igcTimeFormater = function (date:Date) {
   var dateTimeFormat = new Intl.DateTimeFormat('en', { timeZone: 'UTC', hour: '2-digit', hourCycle: 'h24', minute: '2-digit', second: '2-digit' })
   var [{ value: hour }, , { value: minute }, , { value: second }] = dateTimeFormat.formatToParts(date)
-  if ((hour == 24) || (hour == '24')) {
+  if ((Number(hour) == 24) || (hour == '24')) {
     hour = '00';
   }
   return `${hour}${minute}${second}`;
@@ -882,34 +884,34 @@ var igcTimeFormater = function (date) {
 
 /**
  * 
- * @param {*} decimalLat 
+ * @param {number} decimalLat 
  * @returns a latitude in IGC format
  */
-var igcLatFormater = function (decimalLat) {
+var igcLatFormater = function (decimalLat:number) {
   var hemisphere = (decimalLat >= 0) ? 'N' : 'S';
   var degrees = (Math.floor(Math.abs(decimalLat))).toLocaleString('en-US', { minimumIntegerDigits: 2, useGrouping: false });
-  var minutes = (Math.round((Math.abs(decimalLat) - degrees) * 60000)).toLocaleString('en-US', { minimumIntegerDigits: 5, useGrouping: false });
+  var minutes = (Math.round((Math.abs(decimalLat) - Math.floor(Math.abs(decimalLat))) * 60000)).toLocaleString('en-US', { minimumIntegerDigits: 5, useGrouping: false });
   return `${degrees}${minutes}${hemisphere}`;
 };
 
 /**
  * 
- * @param {*} decimalLon 
+ * @param {number} decimalLon 
  * @returns a longitude in IGC format
  */
-var igcLonFormater = function (decimalLon) {
+var igcLonFormater = function (decimalLon:number) {
   var eastern = (decimalLon >= 0) ? 'E' : 'W';
   var degrees = (Math.floor(Math.abs(decimalLon))).toLocaleString('en-US', { minimumIntegerDigits: 3, useGrouping: false });
-  var minutes = (Math.round((Math.abs(decimalLon) - degrees) * 60000)).toLocaleString('en-US', { minimumIntegerDigits: 5, useGrouping: false });
+  var minutes = (Math.round((Math.abs(decimalLon) - Math.floor(Math.abs(decimalLon))) * 60000)).toLocaleString('en-US', { minimumIntegerDigits: 5, useGrouping: false });
   return `${degrees}${minutes}${eastern}`;
 };
 
 /**
  * 
- * @param {*} altitude 
+ * @param {number} altitude 
  * @returns an altitude converted to IGC format
  */
-var igcAltitudeFormater = function (altitude) {
+var igcAltitudeFormater = function (altitude:number) {
   if (altitude >= 0) {
     return `${(Math.round(altitude)).toLocaleString('en-US', { minimumIntegerDigits: 5, useGrouping: false })}`;
   } else {
@@ -918,8 +920,8 @@ var igcAltitudeFormater = function (altitude) {
 };
 
 //Return a Promise with a string containing the IGC file of a trackId
-var getTrackASIgcString = function (trackId) {
-  return new Promise(function (resolve, reject) {
+var getTrackASIgcString = function (trackId:string) {
+  return new Promise(function (resolve) {
     getDBFixesRowsAsPromise(trackId).then((value) => {
       let igc_string = igcProducer(value);
       resolve(igc_string);
@@ -934,17 +936,17 @@ var getTrackASIgcString = function (trackId) {
  * @param {*} date 
  * @returns minimal headers for a valid IGC File
  */
-var igcHeaders = function (date) {
+var igcHeaders = function (date:Date):string {
   return `AXCF034 French CFDMV pre-alpha track fusion\r\nHFDTE${igcDateFormater(date)}\r\nHFPLTPILOTINCHARGE:CFDMV\r\nHFCM2CREW2:NIL\r\nHFGTYGLIDERTYPE:${igc_glider_type}\r\nHFGIDGLIDERID:\r\nHFDTMGPSDATUM:WGS84\r\nHFRFWFIRMWAREVERSION:0\r\nHFRHWHARDWAREVERSION:\r\nHFFTYFRTYPE:TrackJoiner\r\nHFGPSRECEIVER:NIL\r\nHFPRSPRESSALTSENSOR:\r\n`;
 };
 
 /**
  * 
- * @param {*} type 
- * @param {*} isStart 
- * @returns an IGC comment
+ * @param {trackTypes} type 
+ * @param {boolean} isStart 
+ * @returns {string} an IGC comment
  */
-var igcTypeCommentFormater = function (type, isStart) {
+var igcTypeCommentFormater = function (type:trackTypes, isStart:boolean):string {
   var longType = (type == 'H') ? 'HIKE' : 'FLY';
   var longIsStart = isStart ? 'START' : 'END';
   return `LPLT${longType}${longIsStart}\r\n`;
@@ -955,7 +957,7 @@ var igcTypeCommentFormater = function (type, isStart) {
  * @param {*} row 
  * @returns minimal IGC record formater
  */
-var igcBRecordFormater = function (row) {
+var igcBRecordFormater = function (row):string {
   var dt = new Date(row.dt);
   if (isNaN(row.point.lat) || isNaN(row.point.lon)) {
     return '';
@@ -972,9 +974,9 @@ var igcBRecordFormater = function (row) {
  * @param {*} rows 
  * @returns 
  */
-var igcProducer = function (rows) {
+var igcProducer = function (rows):string {
   var szReturn = igcHeaders(new Date(rows[0].dt));
-  var lastType = '';
+  var lastType:trackTypes = null;
 
   for (var i = 0; i < rows.length; i++) {
     if (i == 0) {
@@ -997,7 +999,7 @@ var igcProducer = function (rows) {
  * @param {*} rows 
  * @returns true if there is an overlap
  */
-var isAnOverlapDetected = function (rows) {
+var isAnOverlapDetected = function (rows):boolean {
   for (var i = 1; i < rows.length; i++) {
     if (rows[i - 1].ts_end > rows[i].ts_start) {
       return true;
@@ -1028,7 +1030,7 @@ var getOverlappedRowsID = function (rows) {
  * @param {string} trackId  
  * @returns 
  */
-var integrateInPreviousTrack = function (trackId) {
+var integrateInPreviousTrack = function (trackId:string) {
   return new Promise(function (resolve, reject) {
     getDBTracksRowsAsPromise().then(promisedRows => {
       var previousRowId = '';
@@ -1050,7 +1052,7 @@ var integrateInPreviousTrack = function (trackId) {
 /**
  * showDB the DB in console
  */
-var showDB = function () {
+var showDB = function ():void {
   getDBTracksRowsAsPromise().then((rows) => {
     // selected rows
     console.log(rows);

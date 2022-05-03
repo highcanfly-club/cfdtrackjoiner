@@ -6,7 +6,7 @@ import gpxParser from "gpxparser";
 
 import {
   changePartOfTrackType, changeTrackType, initDB, fixErroneousDT, getDBTracksRowsAsPromise, getDBFixesRowsAsPromise, getTrackASIgcString, getOverlappedRowsID, igcProducer, integrateInPreviousTrack, nanoDB_name, showDB, splitTrackIn2, splitTrackIn3, trackTypes, openFile }
- from "./trackjoiner.js";
+ from "./trackjoiner";
 
 window.GPXParser = gpxParser;
 window.IGCParser = IGCParser;

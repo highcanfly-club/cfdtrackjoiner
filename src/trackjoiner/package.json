@@ -18,6 +18,8 @@
     "crypto-js": "^4.1.1"
   },
   "devDependencies": {
+    "@types/crypto-js": "^4.1.1",
+    "@types/node": "17.0.31",
     "@babel/core": "^7.17.2",
     "@babel/eslint-parser": "^7.17.0",
     "eslint": "^8.8.0"

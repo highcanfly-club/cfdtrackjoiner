@@ -1,0 +1,31 @@
+{
+    "compilerOptions": {
+        "baseUrl": "./",
+        "target": "ES2020",
+        "module": "CommonJS",
+        "lib": [
+            "ES2020",
+            "dom"
+        ],
+        "types": [
+            "node","crypto-js"
+        ],
+        "paths": {
+            "~/*": [
+                "src/app_shared/*",
+            ],
+            "@/*": [
+                "src/*"
+            ]
+        },
+        "resolveJsonModule": true,
+        "esModuleInterop": true
+    },
+    "include": [
+        "src/**/*.ts",
+        "functions/**/*.ts"
+    ],
+    "exclude": [
+        "src/**/*test*.ts"
+    ]
+}
