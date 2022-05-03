@@ -5,9 +5,9 @@
   "license": "MIT",
   "scripts": {
     "serve": "vue-cli-service serve",
-    "serve-dist": "vue-cli-service build --report && node uglify.cjs && npx http-server dist",
-    "build": "vue-cli-service build --report && node uglify.cjs",
-    "build-cf": "vue-cli-service build  --report && node uglify.cjs",
+    "serve-dist": "vue-cli-service build --report && node uglify2.cjs && npx http-server dist",
+    "build": "vue-cli-service build --report && node uglify2.cjs",
+    "build-cf": "vue-cli-service build  --report && node uglify2.cjs",
     "uglify": "node uglify.js",
     "lint": "vue-cli-service lint"
   },
