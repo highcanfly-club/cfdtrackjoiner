@@ -2,7 +2,7 @@
   "name": "trackjoiner",
   "version": "1.0.0",
   "description": "FIT, GPX, IGC track joiner for paraglinding",
-  "main": "index.js",
+  "main": "trackjoiner.ts",
   "type": "module",
   "scripts": {
     "build": "echo \"Error: no build specified\""
@@ -11,17 +11,17 @@
   "author": "Ronan Le Meillat",
   "license": "MIT",
   "dependencies": {
-    "gpxparser":"^3.0.8",
-    "fit-parser": "file:./fit-parser",
-    "igc-parser": "file:./igc-parser",
     "@nano-sql/core": "^2.3.7",
-    "crypto-js": "^4.1.1"
+    "crypto-js": "^4.1.1",
+    "fit-parser": "file:./fit-parser",
+    "gpxparser": "^3.0.8",
+    "igc-parser": "file:./igc-parser"
   },
   "devDependencies": {
-    "@types/crypto-js": "^4.1.1",
-    "@types/node": "17.0.31",
     "@babel/core": "^7.17.2",
     "@babel/eslint-parser": "^7.17.0",
+    "@types/crypto-js": "^4.1.1",
+    "@types/node": "17.0.31",
     "eslint": "^8.8.0"
   }
 }

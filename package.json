@@ -5,9 +5,9 @@
   "license": "MIT",
   "scripts": {
     "serve": "vue-cli-service serve",
-    "serve-dist": "vue-cli-service build --report && node uglify.js && npx http-server dist",
-    "build": "vue-cli-service build --report && node uglify.js",
-    "build-cf": "vue-cli-service build  --report && node uglify.js",
+    "serve-dist": "vue-cli-service build --report && node uglify.cjs && npx http-server dist",
+    "build": "vue-cli-service build --report && node uglify.cjs",
+    "build-cf": "vue-cli-service build  --report && node uglify.cjs",
     "uglify": "node uglify.js",
     "lint": "vue-cli-service lint"
   },
@@ -18,7 +18,6 @@
     "@nano-sql/core": "^2.3.7",
     "core-js": "^3.22.3",
     "trackjoiner": "file:./src/trackjoiner",
-    "uglify-js": "^3.15.4",
     "vue": "^3.2.33",
     "vue-router": "^4.0.14"
   },
@@ -35,11 +34,15 @@
     "@vue/cli-service": "^5.0.4",
     "@vue/eslint-config-typescript": "^10.0.0",
     "autoprefixer": "^10.4.6",
+    "babelify": "^10.0.0",
     "browserify": "^17.0.0",
+    "common-shakeify": "^0.6.2",
+    "esmify": "^2.1.1",
     "gitlog": "^4.0.4",
     "http-server": "^14.1.0",
     "postcss": "^8.4.13",
     "tailwindcss": "^3.0.24",
+    "uglify-js": "^3.15.4",
     "typescript": "4.6.4",
     "webpack": "~5.72.0"
   },
