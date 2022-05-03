@@ -8,11 +8,10 @@
 */
 /* eslint-disable */
 import { nSQL } from "@nano-sql/core";
-import CryptoJS from "crypto-js";
-import IGCParser from "igc-parser";
+import CryptoJS from "crypto-js"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
+import IGCParser from "igc-parser"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
 import {FitParser} from "fit-parser";
-import gpxParser from "gpxparser";
-
+import gpxParser from "gpxparser"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
 
 const nanoDB_name = "cfdmv_db";
 const _DEFAULT_GLIDER_TYPE = "UNKOWN";
@@ -21,6 +20,18 @@ const FIT_DEFAULT_GLIDER_TYPE = "FIT-GLIDER";
 var igc_glider_type = IGC_GLIDER_TYPE;
 
 enum trackTypes { FLY= 'F', HIKE= 'H', MIXED= '' };
+
+interface Track{
+  "id:": string,
+  "dt_start": Date,
+  "ts_start": number,
+  "dt_end": Date,
+  "ts_end": number,
+  "nb_fixes": number,
+  "name:string": string,
+  "type": trackTypes,   // F for flight H for hike
+  "gliderType": string //or empty string if unknown
+}
 
 //still no XOR in EMEA JavaScript
 var ansiXOR = function (a:boolean, b:boolean):boolean {
@@ -38,10 +49,10 @@ var igcDate2ISO8601 = function (igcDate, igcTime) {
  * @param {*} igcTrack 
  * @param {string} hashHex 
  * @param {string} fileName  
- * @param {*} trackType 
- * @param {*} onDBInsertOKCallback 
+ * @param {trackTypes} trackType 
+ * @param {Function} onDBInsertOKCallback 
  */
-var insertIGCTrackInDB = function (igcTrack, hashHex, fileName, trackType, onDBInsertOKCallback) {
+var insertIGCTrackInDB = function (igcTrack, hashHex:string, fileName:string, trackType:trackTypes, onDBInsertOKCallback:Function) {
   var igcDate = igcTrack.date;
   igc_glider_type = ((typeof (igcTrack.gliderType) != "undefined") && (igcTrack.gliderType.length > 0)) ? igcTrack.gliderType : IGC_GLIDER_TYPE;
   var isoDt_start = new Date(igcTrack.fixes[0].timestamp);
@@ -177,7 +188,7 @@ var insertFITTrackInDB = function (fitTrack, hashHex, fileName, trackType, onDBI
  * @param {string} fullPath 
  * @returns 
  */
-var getFileName = function (fullPath) {
+const getFileName = function (fullPath:string):string {
   return fullPath.replace(/^.*[\\\/]/, '');
 };
 
@@ -186,7 +197,7 @@ var getFileName = function (fullPath) {
  * @param {string} fileName  
  * @returns 
  */
-var getFileExtension = function (fileName) {
+const getFileExtension = function (fileName:string):string {
   return fileName.split('.').pop().split(/\#|\?/)[0].toUpperCase();
 };
 
@@ -289,11 +300,11 @@ var openFITFile = function (event, trackType, onDBInsertOKCallback) {
 
 /**
  * Single file reception (with on FileReader), on event:load parse and insert in DB
- * @param {*} file 
- * @param {*} trackType 
- * @param {*} onDBInsertOKCallback 
+ * @param {File} file 
+ * @param {trackTypes} trackType 
+ * @param {Function} onDBInsertOKCallback 
  */
-var openGPXFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
+var openGPXFileTreatSingle = function (file:File, trackType:trackTypes, onDBInsertOKCallback:Function) {
   var reader = new FileReader();
   reader.addEventListener("load", function (event) {
     var gpxFile = event.target;
@@ -316,7 +327,7 @@ var openGPXFileTreatSingle = function (file, trackType, onDBInsertOKCallback) {
  * @param {*} trackType 
  * @param {*} onDBInsertOKCallback 
  */
-var openFileTreatSingle = function (file:File, trackType:string, onDBInsertOKCallback:Function) {
+var openFileTreatSingle = function (file:File, trackType:trackTypes, onDBInsertOKCallback:Function) {
   var reader = new FileReader();
   var fileName = getFileName(file.name);
   var fileExtension = getFileExtension(fileName);
@@ -328,7 +339,7 @@ var openFileTreatSingle = function (file:File, trackType:string, onDBInsertOKCal
     console.log(fileName);
     switch (fileExtension) {
       case "FIT":
-        var fitParser = new FitParser({
+        let fitParser = new FitParser({
           force: true,
           speedUnit: 'km/h',
           lengthUnit: 'm',
@@ -379,9 +390,9 @@ var openFileTreatSingle = function (file:File, trackType:string, onDBInsertOKCal
  * @param {*} trackType 
  * @param {*} onDBInsertOKCallback 
  */
-var openFile = function (event, trackType, onDBInsertOKCallback) {
-  var input = event.target;
-  var files = input.files;
+var openFile = function (event:Event, trackType:trackTypes, onDBInsertOKCallback:Function) {
+  let input = <HTMLInputElement>event.target;
+  let files = input.files;
 
   for (var i = 0; i < files.length; i++) {
     var file = files[i];
@@ -395,9 +406,9 @@ var openFile = function (event, trackType, onDBInsertOKCallback) {
  * @param {*} trackType 
  * @param {*} onDBInsertOKCallback 
  */
-var openGPXFile = function (event, trackType, onDBInsertOKCallback) {
-  var input = event.target;
-  var files = input.files;
+var openGPXFile = function (event:Event, trackType:trackTypes, onDBInsertOKCallback:Function) {
+  let input = <HTMLInputElement>event.target;
+  let files = input.files;
 
   for (var i = 0; i < files.length; i++) {
     var file = files[i];
@@ -478,7 +489,7 @@ var initDB = function () {
  * @param {*} dateObject 
  * @returns 
  */
-var addTimestampToDateObject = function (ts, dateObject) {
+var addTimestampToDateObject = function (ts:number, dateObject:Date):Date {
   var oDate = new Date();
   oDate.setTime(dateObject.getTime() + ts);
   return oDate;
@@ -489,7 +500,7 @@ var addTimestampToDateObject = function (ts, dateObject) {
  * @param {string} trackId  
  * @param {*} realDTStart 
  */
-var fixErroneousDT = function (trackId, realDTStart) {
+var fixErroneousDT = function (trackId:string, realDTStart:Date) {
   getDBTrackRowAsPromise(trackId).then(track => {
     var Δt = realDTStart.getTime() - (new Date(track[0].dt_start)).getTime();
     nSQL("tracks").query("upsert", {}).where(["id", "=", trackId]).updateImmutable(

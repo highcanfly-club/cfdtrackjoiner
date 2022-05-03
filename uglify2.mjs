@@ -11,8 +11,9 @@ const STANDALONE = "./src/trackjoiner/standalone.js";
 const TRACKJOINER_TS = "src/trackjoiner/trackjoiner.ts";
 const TRACKJOINER = "./src/trackjoiner/trackjoiner.js";
 const DEV_BUNDLE = "./dist/js/trackjoiner-bundle.js";
-const LEGACY_TRACKJOINER = "./dist/js/trackjoiner-dev.js";
-const MIN_BUNDLE = "./dist/js/trackjoiner.js";
+const LEGACY_TRACKJOINER = (process.env.CF_PAGES === "1") ? "./dist/js/trackjoiner-dev.js" : "./dist/js/trackjoiner.js";
+const MIN_BUNDLE = (process.env.CF_PAGES === "1") ? "./dist/js/trackjoiner.js" : "./dist/js/trackjoiner-min.js";
+
 const NOMORENEEDED = "n'est plus utilisé vous pouvez le supprimer de vos scripts";
 const IGC_FILE = "./dist/js/igc-parser.js";
 const GPX_FILE = "./dist/js/gpx-parser.js";
@@ -62,7 +63,7 @@ function compileTypeScript(fin, fout) {
             if (err) {
                 reject(console.log(err));
             }
-            let result = ts.transpileModule(data, {}).outputText;
+            let result = ts.transpileModule(data, { compilerOptions: { esModuleInterop: true} }).outputText;
             fs.writeFile(fout, result, 'utf8', function (err) {
                 if (err) reject(console.log(err));
                 else {
@@ -92,30 +93,30 @@ Promise.all([
     compileTypeScript(IGC_TS, IGC_JS)
 ]).then(() => {
     browserify({ standalone: "Trackjoiner" })
-    .add(TRACKJOINER)
-    // .plugin(tsify, { noImplicitAny: false, debug: true, target: "es6" })
-    .plugin(esmify)
-    .plugin(commonShakeify)
-    .transform(babelify, { presets: ["@babel/preset-env"], extensions: ['.jsx', '.js', '.tsx', '.ts'] })
-    .bundle()
-    .pipe(fs.createWriteStream(DEV_BUNDLE, { autoClose: true }))
-    .on('error', function (error) { console.error(error.toString()); })
-    .on('close', () => {
-        let bundle = fs.readFileSync(DEV_BUNDLE, { encoding: 'utf8', flag: 'r' });
-        let standalone = fs.readFileSync(STANDALONE, { encoding: 'utf8', flag: 'r' });
-        let trackjoiner = `${bundle}\n${standalone}\nconsole.log("Trackjoiner v:${(new Date(commits[0].authorDate)).toISOString()} ©Ronan Le Meillat, see https://github.com/eltorio/cfdtrackjoiner")`;
-        fs.writeFileSync(LEGACY_TRACKJOINER, trackjoiner);
-        console.log(`Minify bundle to ${MIN_BUNDLE}`);
-        minify(LEGACY_TRACKJOINER, MIN_BUNDLE).then(() => {
-            console.log("removed temp files");
-            fs.rmSync(DEV_BUNDLE);
-            fs.rmSync(IGC_JS);
-            fs.rmSync(TRACKJOINER);
-            console.log("Add messages telling that old scripts are not needed anymore")
-            fs.writeFileSync(IGC_FILE, `console.log("${IGC_FILE} ${NOMORENEEDED}");`);
-            fs.writeFileSync(GPX_FILE, `console.log("${GPX_FILE} ${NOMORENEEDED}");`);
-            fs.writeFileSync(FIT_FILE, `console.log("${FIT_FILE} ${NOMORENEEDED}");`);
+        .add(TRACKJOINER)
+        // .plugin(tsify, { noImplicitAny: false, debug: true, target: "es6" })
+        .plugin(esmify)
+        .plugin(commonShakeify)
+        .transform(babelify, { presets: ["@babel/preset-env"], extensions: ['.jsx', '.js', '.tsx', '.ts'] })
+        .bundle()
+        .pipe(fs.createWriteStream(DEV_BUNDLE, { autoClose: true }))
+        .on('error', function (error) { console.error(error.toString()); })
+        .on('close', () => {
+            let bundle = fs.readFileSync(DEV_BUNDLE, { encoding: 'utf8', flag: 'r' });
+            let standalone = fs.readFileSync(STANDALONE, { encoding: 'utf8', flag: 'r' });
+            let trackjoiner = `${bundle}\n${standalone}\nconsole.log("Trackjoiner v:${(new Date(commits[0].authorDate)).toISOString()} ©Ronan Le Meillat, see https://github.com/eltorio/cfdtrackjoiner")`;
+            fs.writeFileSync(LEGACY_TRACKJOINER, trackjoiner);
+            console.log(`Minify bundle to ${MIN_BUNDLE}`);
+            minify(LEGACY_TRACKJOINER, MIN_BUNDLE).then(() => {
+                console.log("removed temp files");
+                fs.rmSync(DEV_BUNDLE);
+                fs.rmSync(IGC_JS);
+                fs.rmSync(TRACKJOINER);
+                console.log("Add messages telling that old scripts are not needed anymore")
+                fs.writeFileSync(IGC_FILE, `console.log("${IGC_FILE} ${NOMORENEEDED}");`);
+                fs.writeFileSync(GPX_FILE, `console.log("${GPX_FILE} ${NOMORENEEDED}");`);
+                fs.writeFileSync(FIT_FILE, `console.log("${FIT_FILE} ${NOMORENEEDED}");`);
+            });
         });
-    });
 })
 
