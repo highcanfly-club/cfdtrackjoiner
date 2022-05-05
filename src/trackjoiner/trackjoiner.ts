@@ -788,7 +788,7 @@ var cutOverlapping = function (track_A_id: string, track_B_id: string): Promise<
               type: track_B_row.type,
               gliderType: (track_B_row.type == trackTypes.FLY) ? gliderType : ""
             }])
-              .exec();
+              .exec() as Promise<Track[]>;
             var insertTrackB2 = nSQL("tracks").query("upsert", [{
               id: track_B2_id,
               dt_start: new Date(track_A_row.ts_end + 1),
@@ -800,13 +800,13 @@ var cutOverlapping = function (track_A_id: string, track_B_id: string): Promise<
               type: track_B_row.type,
               gliderType: (track_B_row.type == trackTypes.FLY) ? gliderType : ""
             }])
-              .exec();
+              .exec() as Promise<Track[]>;
             var nbB1FixesInserted = insertFixesArrayInDB(track_B1_id.toString(CryptoJS.enc.Hex), B1_fixes);
 
             var nbB2FixesInserted = insertFixesArrayInDB(track_B2_id.toString(CryptoJS.enc.Hex), B2_fixes);
 
-            var fixesDelete = nSQL("fixes").query("delete").where(["track_id", "=", track_B_row.id]).exec();
-            var tracksDelete = nSQL("tracks").query("delete").where(["id", "=", track_B_row.id]).exec();
+            var fixesDelete = nSQL("fixes").query("delete").where(["track_id", "=", track_B_row.id]).exec()  as Promise<Fix[]>;
+            var tracksDelete = nSQL("tracks").query("delete").where(["id", "=", track_B_row.id]).exec() as Promise<Track[]>;
             Promise.all([insertTrackB1, insertTrackB2, nbB1FixesInserted, nbB2FixesInserted, fixesDelete, tracksDelete])
               .then((value: 
                 [insertTrackB1: Track[],
@@ -855,7 +855,9 @@ var getDBTrackRowAsPromise = function (trackId: string): Promise<Track[]> {
  */
 var getDBFirstGliderType = function (): Promise<string> {
   return new Promise<string>(function (resolve, reject) {
-    nSQL("tracks").query("select", ["gliderType"]).where([["gliderType.length", ">", 0], "AND", ["gliderType", "!=", IGC_GLIDER_TYPE]]).exec().then((tracks: Track[]) => {
+    let promiseSelect = nSQL("tracks").query("select", ["gliderType"]).where([["gliderType.length", ">", 0], "AND", ["gliderType", "!=", IGC_GLIDER_TYPE]]).exec() as Promise<Track[]>
+    
+    promiseSelect.then((tracks: Track[]) => {
       if ((typeof (tracks[0]) != "undefined") && ((typeof (tracks[0].gliderType) != "undefined") && (tracks[0].gliderType != IGC_GLIDER_TYPE))) {
         resolve(tracks[0].gliderType);
       } else {
