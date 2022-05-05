@@ -12,7 +12,9 @@ import CryptoJS from "crypto-js"; //tsc/trasnspileModule needs {compilerOptions:
 import IGCParser from "igc-parser"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
 import { FitParser } from "fit-parser";
 import gpxParser from "gpxparser"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
+import {Track as GpxParserTrack} from "gpxparser";
 import { FitData } from "fit-parser/src/fit-parser";
+import GpxParser from "gpxparser";
 
 const nanoDB_name = "cfdmv_db";
 const _DEFAULT_GLIDER_TYPE = "UNKOWN";
@@ -122,7 +124,7 @@ var insertIGCTrackInDB = function (igcTrack: IGCParser.IGCFile, hashHex: string,
  * @param {*} trackType 
  * @param {*} onDBInsertOKCallback 
  */
-var insertGPXTrackInDB = function (gpxTrack, hashHex, fileName, trackType, onDBInsertOKCallback) {
+var insertGPXTrackInDB = function (gpxTrack:GpxParserTrack, hashHex:string, fileName:string, trackType:trackTypes, onDBInsertOKCallback:Function) {
   var gpxDate = gpxTrack.points[0].time;
   var isoDt_start = gpxTrack.points[0].time;
   var unixTs_start = isoDt_start.getTime();
@@ -136,9 +138,9 @@ var insertGPXTrackInDB = function (gpxTrack, hashHex, fileName, trackType, onDBI
     }).catch((error) => {
       console.log(error.toString());
     });
+  let fixInserted:Promise<Fix[]>[]=[];
   for (var i = 0; i < gpxTrack.points.length; i++) {
-
-    nSQL("fixes")
+    fixInserted.push(<Promise<Fix[]>>nSQL("fixes")
       .query("upsert", [{
         track_id: hashHex,
         point: { lat: gpxTrack.points[i].lat, lon: gpxTrack.points[i].lon },
@@ -148,14 +150,14 @@ var insertGPXTrackInDB = function (gpxTrack, hashHex, fileName, trackType, onDBI
         ts: gpxTrack.points[i].time.getTime(),
         type: trackType //WIP use IGC for hike
       }])
-      .exec().then(() => {
-        //OK
-      }).catch((error) => {
+      .exec()
+      .catch((error) => {
         console.log(error.toString());
-      });
-
-
+      }))
   }
+  Promise.all(fixInserted).then(()=>{
+    console.log('gpx inserted');
+  })
 };
 
 
