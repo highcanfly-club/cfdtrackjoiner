@@ -68,7 +68,7 @@ var igcDate2ISO8601 = function (igcDate:string, igcTime:string):string {
  * @param {trackTypes} trackType 
  * @param {Function} onDBInsertOKCallback 
  */
-var insertIGCTrackInDB = function (igcTrack, hashHex: string, fileName: string, trackType: trackTypes, onDBInsertOKCallback: Function) {
+var insertIGCTrackInDB = function (igcTrack: IGCParser.IGCFile, hashHex: string, fileName: string, trackType: trackTypes, onDBInsertOKCallback: Function) {
   var igcDate = igcTrack.date;
   igc_glider_type = ((typeof (igcTrack.gliderType) != "undefined") && (igcTrack.gliderType.length > 0)) ? igcTrack.gliderType : IGC_GLIDER_TYPE;
   var isoDt_start = new Date(igcTrack.fixes[0].timestamp);
@@ -83,13 +83,14 @@ var insertIGCTrackInDB = function (igcTrack, hashHex: string, fileName: string, 
     }).catch((error) => {
       console.log(error.toString());
     });
+    let fixInserted:Promise<Fix[]>[]=[];
   for (var i = 0; i < igcTrack.fixes.length; i++) {
     if (igcTrack.fixes[i].valid) {
       // fill pressureAltitude with gpsAltitude if empty, this is for filling the DB in the preciseAltitude field
       if (typeof (igcTrack.fixes[i].pressureAltitude) == "undefined" || igcTrack.fixes[i].pressureAltitude == null) {
         igcTrack.fixes[i].pressureAltitude = igcTrack.fixes[i].gpsAltitude;
       }
-      nSQL("fixes")
+      fixInserted.push(<Promise<Fix[]>>nSQL("fixes")
         .query("upsert", [{
           track_id: hashHex,
           point: { lat: igcTrack.fixes[i].latitude, lon: igcTrack.fixes[i].longitude },
@@ -99,13 +100,16 @@ var insertIGCTrackInDB = function (igcTrack, hashHex: string, fileName: string, 
           ts: igcTrack.fixes[i].timestamp,
           type: trackType //WIP use IGC for hike
         }])
-        .exec().then(() => {
-          //OK
-        }).catch((error) => {
+        .exec() 
+        .catch((error) => {
           console.log(error.toString());
-        });
+        })
+        )
     }
   }
+    Promise.all(fixInserted).then(()=>{
+      console.log('igc inserted');
+    })
 
 };
 
