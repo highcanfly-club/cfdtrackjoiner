@@ -240,7 +240,7 @@
           px-4
           m-2
         "
-        @click="$refs.fileFly.click()"
+        @click="clickButton($refs.fileFly)"
         :disabled="state.isLoading"
       >
         <svg
@@ -294,7 +294,7 @@
           px-4
           m-2
         "
-        @click="$refs.fileHike.click()"
+        @click="clickButton($refs.fileHike)"
         :disabled="state.isLoading"
       >
         <svg
@@ -348,7 +348,7 @@
           px-4
           m-2
         "
-        :disabled="state.isLoading || state.overlapped_rows.length"
+        :disabled="state.isLoading || (state.overlapped_rows.length > 0)"
         :class="
           state.overlapped_rows.length
             ? 'bg-slate-200 hover:bg-slate-200 stat'
@@ -552,6 +552,9 @@ export default defineComponent({
     },
     showDB() {
       showDB();
+    },
+    clickButton(target:HTMLElement){
+      target.click();
     }
   },
   mounted() {
