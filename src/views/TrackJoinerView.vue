@@ -172,7 +172,6 @@
                         leading-5
                         font-semibold
                         rounded-full
-                        bg-green-100
                         text-green-800
                       "
                       :class="
@@ -432,8 +431,8 @@
   </div>
   <track-joiner-help />
 </template>
-<script>
-import { reactive } from "vue";
+<script lang="ts">
+import { reactive,defineComponent } from "vue";
 import {
   initDB,
   getDBTracksRowsAsPromise,
@@ -444,8 +443,8 @@ import {
   integrateInPreviousTrack,
   trackTypes,
   openFile,
+  showDB,
 } from "trackjoiner";
-import { nSQL } from "@nano-sql/core";
 import TrackJoinerHelp from "./trackJoinerHelp.vue";
 
 const state = reactive({
@@ -482,7 +481,7 @@ let promisedstate = function (promised_rows) {
 
 let getTrack = function (trackId, target) {
   state.isLoading = true;
-  getTrackASIgcString().then((igc_string) => {
+  getTrackASIgcString(trackId).then((igc_string) => {
     var a = document.createElement("a");
     var iLink = document.createElement("i");
     iLink.className = "fas fa-download";
@@ -496,7 +495,7 @@ let getTrack = function (trackId, target) {
   });
 };
 
-export default {
+export default defineComponent({
   data() {
     const isHashVisible = false;
     return {
@@ -551,23 +550,17 @@ export default {
         state.overlapped_rows = [];
       });
     },
+    showDB() {
+      showDB();
+    }
   },
-  setup() {
+  mounted() {
     state.isLoading = true;
-    if (nSQL().listDatabases().length)
-      nSQL()
-        .dropDatabase("cdfmv_db")
-        .then(() => {
-          initDB();
-          state.isLoading = false;
-        });
-    else {
       initDB();
       state.isLoading = false;
-    }
   },
   components: {
     TrackJoinerHelp,
   },
-};
+});
 </script>
