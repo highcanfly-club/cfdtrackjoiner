@@ -10,7 +10,7 @@
 import { nSQL } from "@nano-sql/core";
 import CryptoJS from "crypto-js"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
 import IGCParser from "igc-parser"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
-import {FitParser,FitData} from "fit-parser";
+import { FitParser, FitData } from "fit-parser";
 import gpxParser from "gpxparser"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
 import { Track as GpxParserTrack } from "gpxparser";
 
@@ -78,28 +78,33 @@ let igcDate2ISO8601 = function (igcDate: string, igcTime: string): string {
  * @param {trackTypes} trackType
  * @param {Function} onDBInsertOKCallback
  */
- let insertIGCTrackInDB = function (
+let insertIGCTrackInDB = function (
   igcTrack: IGCParser.IGCFile,
   hashHex: string,
   fileName: string,
   trackType: trackTypes,
   onDBInsertOKCallback: Function
 ) {
-  insertIGCTrackInDBAsPromise(igcTrack,hashHex,fileName,trackType).then(()=>{onDBInsertOKCallback()});
-}
+  insertIGCTrackInDBAsPromise(igcTrack, hashHex, fileName, trackType).then(
+    () => {
+      onDBInsertOKCallback();
+    }
+  );
+};
 /**
  * Insert on IGC track parsed with IGCParser goes in tracks , gps points in fixes
- * @param {*} igcTrack
- * @param {string} hashHex
- * @param {string} fileName
- * @param {trackTypes} trackType
+ * @param hashHex 
+ * @param fileName 
+ * @param trackType 
+ * @returns An array of Promise resolving as type [Track[],...Fix[][]
+ * so first element is Track[] followers are Fix[]
  */
 let insertIGCTrackInDBAsPromise = function (
   igcTrack: IGCParser.IGCFile,
   hashHex: string,
   fileName: string,
   trackType: trackTypes
-):Promise<[Track[],...Fix[][]]> {
+): Promise<[Track[], ...Fix[][]]> {
   let igcDate = igcTrack.date;
   igc_glider_type =
     typeof igcTrack.gliderType != "undefined" && igcTrack.gliderType.length > 0
@@ -164,7 +169,7 @@ let insertIGCTrackInDBAsPromise = function (
   // Promise.all(fixInserted).then(() => {
   //   console.log("igc inserted");
   // });
-  return Promise.all([trackPromise,...fixInserted]);
+  return Promise.all([trackPromise, ...fixInserted]);
 };
 
 /**
@@ -183,13 +188,35 @@ let insertGPXTrackInDB = function (
   trackType: trackTypes,
   onDBInsertOKCallback: Function
 ) {
+  insertGPXTrackInDBAsPromise(gpxTrack, hashHex, fileName, trackType).then(
+    (value) => {
+      onDBInsertOKCallback();
+    }
+  );
+};
+/**
+ * Insert on GPX track parsed with GPXParser (data.tracks[0].segments[0])
+ * header goes in tracks , gps points in fixes
+ * @param gpxTrack
+ * @param hashHex
+ * @param fileName
+ * @param trackType
+ * @returns An array of Promise resolving as type [Track[],...Fix[][]
+ * so first element is Track[] followers are Fix[]
+ */
+let insertGPXTrackInDBAsPromise = function (
+  gpxTrack: GpxParserTrack,
+  hashHex: string,
+  fileName: string,
+  trackType: trackTypes
+): Promise<[Track[], ...Fix[][]]> {
   let gpxDate = gpxTrack.points[0].time;
   let isoDt_start = gpxTrack.points[0].time;
   let unixTs_start = isoDt_start.getTime();
   let isoDt_end = gpxTrack.points[gpxTrack.points.length - 1].time;
   let unixTs_end = isoDt_end.getTime();
   nSQL().useDatabase(nanoDB_name);
-  nSQL("tracks")
+  let trackPromise = <Promise<Track[]>>nSQL("tracks")
     .query("upsert", [
       {
         id: hashHex,
@@ -204,9 +231,6 @@ let insertGPXTrackInDB = function (
       },
     ])
     .exec()
-    .then(() => {
-      onDBInsertOKCallback();
-    })
     .catch((error: Error) => {
       console.log(error.toString());
     });
@@ -231,9 +255,7 @@ let insertGPXTrackInDB = function (
         })
     );
   }
-  Promise.all(fixInserted).then(() => {
-    console.log("gpx inserted");
-  });
+  return Promise.all([trackPromise, ...fixInserted]);
 };
 
 /**
@@ -248,18 +270,40 @@ let insertGPXTrackInDB = function (
  * @param trackType
  * @param onDBInsertOKCallback
  */
-let insertFITTrackInDB = function (
+ let insertFITTrackInDB = function (
   fitTrack: FitData,
   hashHex: string,
   fileName: string,
   trackType: trackTypes,
   onDBInsertOKCallback: Function
 ) {
+  insertFITTrackInDBAsPromise(fitTrack,hashHex,fileName,trackType).then((value)=>{
+    onDBInsertOKCallback();
+  })
+}
+
+/**
+ * Insert on FIT track parsed with FITParser
+ * header goes in tracks , gps points in fixes
+ * TO BE CHECKED :
+ * the only altitude my Fenix 6 gives is "enhanced_altitude" not sure all watches have this field
+ * TO DO : find a basic watch without barometer for seing wich altitude it gives
+ * @param fitTrack
+ * @param hashHex
+ * @param fileName
+ * @param trackType
+ */
+let insertFITTrackInDBAsPromise = function (
+  fitTrack: FitData,
+  hashHex: string,
+  fileName: string,
+  trackType: trackTypes
+): Promise<[Track[], ...Fix[][]]> {
   let unixTs_start = fitTrack.records[0].timestamp.getTime();
   let unixTs_end =
     fitTrack.records[fitTrack.records.length - 1].timestamp.getTime();
   nSQL().useDatabase(nanoDB_name);
-  nSQL("tracks")
+  let trackPromise = <Promise<Track[]>>nSQL("tracks")
     .query("upsert", [
       {
         id: hashHex,
@@ -274,9 +318,6 @@ let insertFITTrackInDB = function (
       },
     ])
     .exec()
-    .then(() => {
-      onDBInsertOKCallback();
-    })
     .catch((error: Error) => {
       console.log(error.toString());
     });
@@ -308,9 +349,7 @@ let insertFITTrackInDB = function (
         })
     );
   }
-  Promise.all(fixInserted).then(() => {
-    console.log("fit inserted");
-  });
+  return Promise.all([trackPromise, ...fixInserted]);
 };
 
 /**
