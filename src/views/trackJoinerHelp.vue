@@ -281,6 +281,8 @@ import {
   TransitionChild,
   TransitionRoot,
 } from "@headlessui/vue";
+import Commit from "../../commit.json";
+
 import { RouteLocation } from "vue-router";
 
 export default defineComponent({
@@ -290,6 +292,7 @@ export default defineComponent({
     );
     return {
       slideOpen,
+      commit_date: Commit.cfdtrackjoiner,
     };
   },
   components: {
