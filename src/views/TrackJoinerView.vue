@@ -1,4 +1,67 @@
 <template>
+  <div v-if="state.isLoading" class="loading">
+    <div
+      class="
+        fixed
+        top-0
+        left-0
+        right-0
+        bottom-0
+        w-full
+        h-screen
+        z-50
+        overflow-hidden
+        bg-gray-700
+        opacity-80
+        flex flex-col
+        items-center
+        justify-center
+      "
+    >
+      <div
+        class="
+          loader
+          ease-linear
+          rounded-full
+          border-4 border-t-4 border-gray-200
+          h-12
+          w-12
+          mb-4
+        "
+      ></div>
+      <h2 class="text-center text-white text-xl font-semibold">
+        Assemblage...
+      </h2>
+      <p class="w-1/3 text-center text-white">Nous analysons les données…</p>
+      <Transition
+        appear
+        name="appears3s"
+        enter-active-class="transition-opacity duration-[3s] ease-[cubic-bezier(1,0,1,-0.5)]"
+        enter-from-class="opacity-0"
+        leave-to-class="opacity-0"
+      >
+        <p class="w-1/3 text-center text-white">Soyez patients…</p>
+      </Transition>
+      <Transition
+        appear
+        name="appears6s"
+        enter-active-class="transition-opacity duration-[6s] ease-[cubic-bezier(1,0,1,-0.5)]"
+        enter-from-class="opacity-0"
+        leave-to-class="opacity-0"
+      >
+        <p class="w-1/3 text-center text-white">Ça avance…</p>
+      </Transition>
+      <Transition
+        appear
+        name="appears9s"
+        enter-active-class="transition-opacity duration-[9s] ease-[cubic-bezier(1,0,1,-0.5)]"
+        enter-from-class="opacity-0"
+        leave-to-class="opacity-0"
+      >
+        <p class="w-1/3 text-center text-white">C'est bientôt prêt…</p>
+      </Transition>
+    </div>
+  </div>
   <div>
     <div class="flex flex-col">
       <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
@@ -124,7 +187,7 @@
                       <div class="flex-shrink-0 h-10 w-10">
                         <i
                           :class="
-                            row.type == 'F'
+                            row.type == trackTypes.FLY
                               ? 'fas fa-plane-departure'
                               : 'fas fa-hiking'
                           "
@@ -272,7 +335,7 @@
         multiple
         ref="fileFly"
         style="display: none"
-        @change="clickFly"
+        @change="clickFile($event, trackTypes.FLY)"
       />
       <button
         type="button"
@@ -326,7 +389,7 @@
         multiple
         ref="fileHike"
         style="display: none"
-        @change="clickHike"
+        @change="clickFile($event, trackTypes.HIKE)"
       />
       <button
         @click="clickJoin"
@@ -348,7 +411,7 @@
           px-4
           m-2
         "
-        :disabled="state.isLoading || (state.overlapped_rows.length > 0)"
+        :disabled="state.isLoading || state.overlapped_rows.length > 0"
         :class="
           state.overlapped_rows.length
             ? 'bg-slate-200 hover:bg-slate-200 stat'
@@ -427,76 +490,39 @@
         <i class="fas fa-download"></i>&nbsp;Télécharger
       </a>
     </div>
-
   </div>
   <track-joiner-help />
 </template>
 <script lang="ts">
-import { reactive,defineComponent } from "vue";
+import { reactive, defineComponent } from "vue";
 import {
   initDB,
   getDBTracksRowsAsPromise,
-  getDBFixesRowsAsPromise,
   getTrackASIgcString,
   getOverlappedRowsID,
-  igcProducer,
   integrateInPreviousTrack,
   trackTypes,
-  openFile,
+  openFileAsPromise,
   showDB,
+  Track,
 } from "trackjoiner";
 import TrackJoinerHelp from "./trackJoinerHelp.vue";
+import Commit from "../../commit.json";
 
-const state = reactive({
-  rows: [],
-  overlapped_rows: [],
-  isLoading: false,
-  downloadLink: "",
-});
-
-let insertDBCallback = function () {
-  let _reactivestate = state;
-  getDBTracksRowsAsPromise().then((rows) => {
-    _reactivestate.rows = rows;
-    _reactivestate.isLoading = false;
-  });
-};
-
-let promisedstate = function (promised_rows) {
-  let _reactivestate = state;
-  var tracks_rows = promised_rows[0];
-  var fixes_rows = promised_rows[1];
-  _reactivestate.overlapped_rows = getOverlappedRowsID(tracks_rows);
-  _reactivestate.isLoading = false;
-  if (_reactivestate.overlapped_rows.length == 0) {
-    var igcString = igcProducer(fixes_rows);
-    _reactivestate.downloadLink =
-      "data:octet/stream;charset=utf-8," + encodeURIComponent(igcString);
-  } else {
-    for (var i = 0; i < _reactivestate.overlapped_rows.length; i++) {
-      console.log("#row_" + _reactivestate.overlapped_rows[i] + " OVERLAPPED");
-    }
-  }
-};
-
-let getTrack = function (trackId, target) {
-  state.isLoading = true;
-  getTrackASIgcString(trackId).then((igc_string) => {
-    var a = document.createElement("a");
-    var iLink = document.createElement("i");
-    iLink.className = "fas fa-download";
-    a.appendChild(iLink);
-    a.title = "Télécharger";
-    a.href =
-      "data:octet/stream;charset=utf-8," + encodeURIComponent(igc_string);
-    a.download = trackId + ".igc";
-    target.parentNode.replaceChild(a, target);
-    state.isLoading = false;
-  });
-};
-
+interface ReactiveData {
+  rows: Track[];
+  overlapped_rows: string[];
+  isLoading: boolean;
+  downloadLink: string;
+}
 export default defineComponent({
-  data() {
+  setup() {
+    const state = reactive<ReactiveData>({
+      rows: [] as Track[],
+      overlapped_rows: [] as string[],
+      isLoading: false,
+      downloadLink: "",
+    });
     const isHashVisible = false;
     return {
       commit_date: new Intl.DateTimeFormat("fr-FR", {
@@ -505,37 +531,78 @@ export default defineComponent({
         day: "2-digit",
         hour: "numeric",
         minute: "numeric",
-      }).format(new Date(process.env.VUE_APP_GIT_TRACKJOINER_LAST_COMMIT)),
+      }).format(new Date(Commit.cfdtrackjoiner)),
       state,
       trackTypes,
-      openFile,
       isHashVisible,
     };
   },
   methods: {
-    clickFly(event) {
-      state.isLoading = true;
-      openFile(event, trackTypes.FLY, insertDBCallback);
+    clickFile(event: Event, trackType: trackTypes) {
+      (this.state as ReactiveData).isLoading = true;
+      setTimeout(() => {
+        openFileAsPromise(event, trackType).then(() => {
+          this.updateRows();
+        });
+      });
     },
-    clickHike(event) {
-      state.isLoading = true;
-      openFile(event, trackTypes.HIKE, insertDBCallback);
+    updateRows() {
+      getDBTracksRowsAsPromise().then((rows) => {
+        (this.state as ReactiveData).rows = rows;
+        (this.state as ReactiveData).isLoading = false;
+      });
     },
     clickJoin() {
-      state.isLoading = true;
-      var tracksQueryPromise = getDBTracksRowsAsPromise();
-      var fixesQueryPromise = getDBFixesRowsAsPromise();
-      Promise.all([tracksQueryPromise, fixesQueryPromise])
-        .then(promisedstate)
-        .catch((error) => {
-          console.log(error.toString());
+      (this.state as ReactiveData).isLoading = true;
+      setTimeout(() => {
+        getDBTracksRowsAsPromise().then((tracks: Track[]) => {
+          (this.state as ReactiveData).overlapped_rows =
+            getOverlappedRowsID(tracks);
+          if ((this.state as ReactiveData).overlapped_rows.length === 0) {
+            getTrackASIgcString().then((igc_result) => {
+              (this.state as ReactiveData).downloadLink =
+                "data:octet/stream;charset=utf-8," +
+                encodeURIComponent(igc_result);
+              (this.state as ReactiveData).isLoading = false;
+            });
+          } else {
+            for (
+              let i = 0;
+              i < (this.state as ReactiveData).overlapped_rows.length;
+              i++
+            ) {
+              console.log(
+                "#row_" +
+                  (this.state as ReactiveData).overlapped_rows[i] +
+                  " OVERLAPPED"
+              );
+            }
+            (this.state as ReactiveData).isLoading = false;
+          }
         });
+      });
     },
-    clickDownload(trackId, event) {
-      state.isLoading = true;
-      getTrack(trackId, event.target);
+    clickDownload(trackId: string, event: MouseEvent) {
+      (this.state as ReactiveData).isLoading = true;
+      setTimeout(() => {
+        getTrackASIgcString(trackId).then((igc_string) => {
+          var a = document.createElement("a");
+          var iLink = document.createElement("i");
+          iLink.className = "fas fa-download";
+          a.appendChild(iLink);
+          a.title = "Télécharger";
+          a.href =
+            "data:octet/stream;charset=utf-8," + encodeURIComponent(igc_string);
+          a.download = trackId + ".igc";
+          (event.target as HTMLElement).parentNode.replaceChild(
+            a,
+            event.target as HTMLElement
+          );
+          (this.state as ReactiveData).isLoading = false;
+        });
+      });
     },
-    isOverlapped(row, overlapped_rows) {
+    isOverlapped(row: Track, overlapped_rows: string[]) {
       for (let i = 0; i < overlapped_rows.length; i++) {
         if (row.id == overlapped_rows[i]) {
           return true;
@@ -543,27 +610,52 @@ export default defineComponent({
         return false;
       }
     },
-    resolveOverlap(row) {
-      state.isLoading = true;
+    resolveOverlap(row: Track) {
+      (this.state as ReactiveData).isLoading = true;
       integrateInPreviousTrack(row.id).then(() => {
-        insertDBCallback();
-        state.overlapped_rows = [];
+        this.updateRows();
+        (this.state as ReactiveData).overlapped_rows = [];
       });
     },
     showDB() {
       showDB();
     },
-    clickButton(target:HTMLElement){
+    clickButton(target: HTMLElement) {
       target.click();
-    }
+    },
   },
   mounted() {
-    state.isLoading = true;
-      initDB();
-      state.isLoading = false;
+    (this.state as ReactiveData).isLoading = true;
+    initDB();
+    (this.state as ReactiveData).isLoading = false;
   },
   components: {
     TrackJoinerHelp,
   },
 });
 </script>
+<style scoped>
+.loader {
+  border-top-color: #3498db;
+  -webkit-animation: spinner 1.5s linear infinite;
+  animation: spinner 1.5s linear infinite;
+}
+
+@-webkit-keyframes spinner {
+  0% {
+    -webkit-transform: rotate(0deg);
+  }
+  100% {
+    -webkit-transform: rotate(360deg);
+  }
+}
+
+@keyframes spinner {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+</style>
