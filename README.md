@@ -37,93 +37,20 @@ TrackJoinerComponent.vue is a symlink to CFDTrackJoiner/src/views/TrackJoinerVie
 # Vue.js v3
   * Vue.js v3 code is available at the root https://cfdmv.highcanfly.club
   * This project is built as a vuejs v3 template. See implentation in /src/views/TrackJoinerView.vue
-  * The dependencies are currently dynamically loaded from the setup() function in TrackJoinerView.vue  
-  * This is a temporary workaround. A module is in the todo list but it needs to keep the legacy library compatibility.  
-    ```javascript
-            let loadScript = function (src) {
-            return new Promise(function (resolve, reject) {
-                const s = document.createElement("script");
-                let r = false;
-                s.type = "text/javascript";
-                s.src = src;
-                s.async = true;
-                s.onerror = function (err) {
-                    reject(err, s);
-                };
-                s.onload = s.onreadystatechange = function () {
-                    // console.log(this.readyState); // uncomment this line to see which ready states are called.
-                    if (!r && (!this.readyState || this.readyState == "complete")) {
-                        r = true;
-                        resolve();
-                    }
-                };
-                const t = document.getElementsByTagName("script")[0];
-                t.parentElement.insertBefore(s, t);
-            });
-        };
-    ```
-  * The dependencies are dinamically loaded from the setup() function in TrackJoinerView.vue
-    ```javascript
-            setup() {
-            state.isLoading = true;
-            let promiseNanoSql = loadScript(
-                "https://cdn.jsdelivr.net/npm/@nano-sql/core@2.3.7/dist/nano-sql.min.js"
-            );
-            let promiseCryptoJs = loadScript(
-                "https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"
-            );
-            let promiseIgcParser = loadScript(
-                "https://cfdmv.highcanfly.club/js/igc-parser.js"
-            );
-            let promiseFitParser = loadScript(
-                "https://cfdmv.highcanfly.club/js/fit-parser.js"
-            );
-            let promiseGpxParser = loadScript(
-                "https://cfdmv.highcanfly.club/js/gpx-parser.js"
-            );
-
-
-            Promise.all([
-                promiseNanoSql,
-                promiseCryptoJs,
-                promiseIgcParser,
-                promiseFitParser,
-                promiseGpxParser,
-            ]).then(() => {
-                state.isLoading = false;
-                if (window.nSQL().listDatabases().length)
-                    window
-                        .nSQL()
-                        .dropDatabase("cdfmv_db")
-                        .then(() => {
-                            initDB();
-                        });
-                else initDB();
-            });
-        }
-    ```
 
 # Legacy sample usage
-  * Legacy code is still available https://cfdmv.highcanfly.club/legacy.html
+  * Legacy code is still available https://cfdmv.highcanfly.club/legacy2.html
 
-  * First, you must include the required JavaScript libraries (jQuery, CryptoJS and NanoSQL) you can host them on your website or link them directly from some cdn:
+  * First, you must include the required JavaScript library (jQuery) you can host them on your website or link them directly from some cdn:
     ```html
     <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js'></script>
-    <script src='https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js'></script>
-    <script src='https://cdn.jsdelivr.net/npm/@nano-sql/core@2.3.7/dist/nano-sql.min.js'></script>
     ```
   * you also need these local sources (minified):
     ```html
-    <script src="https://cfdmv.highcanfly.club/js/igc-parser.js"></script>
-    <script src="https://cfdmv.highcanfly.club/js/fit-parser.js"></script>
-    <script src="https://cfdmv.highcanfly.club/js/gpx-parser.js"></script>
     <script src="https://cfdmv.highcanfly.club/js/trackjoiner.js"></script>
     ```
     if you need the source files:
     ```html
-    <script src="https://cfdmv.highcanfly.club/js/igc-parser-dev.js"></script>
-    <script src="https://cfdmv.highcanfly.club/js/fit-parser-dev.js"></script>
-    <script src="https://cfdmv.highcanfly.club/js/gpx-parser-dev.js"></script>
     <script src="https://cfdmv.highcanfly.club/js/trackjoiner-dev.js"></script>
     ```
   * Second, place the two buttons for flies and for hikes and the button for the result:

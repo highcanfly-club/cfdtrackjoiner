@@ -1,0 +1,185 @@
+<html>
+    <head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="css/blue.css">
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js'></script>
+    <script src='js/trackjoiner.js'></script>
+    <script>
+
+  // for debug purposes
+  var showDB = function(){
+    getDBTracksRowsAsPromise().then((rows) => {
+                      // selected rows
+                      console.log(rows);
+                  }).catch((error) => {
+                    console.log(error.toString());
+                  });
+    getDBFixesRowsAsPromise().then((rows) => {
+                      // selected rows
+                      console.log(rows);
+                  }).catch((error) => {
+                    console.log(error.toString());
+                  });                  
+    }
+
+// Main logic
+    var showHTMLTable = function(tableId){
+      $(tableId + " tbody").empty();
+      var options = { year: '2-digit', month: 'short', day: '2-digit', hour:'numeric', minute:'numeric', second:'numeric'};
+      getDBTracksRowsAsPromise().then((rows) => {
+                        var integrateLink = '';
+                        for (var i=0; i<rows.length;i++){
+                                    var dt_start = new Intl.DateTimeFormat('fr-FR', options).format(new Date(rows[i].dt_start));
+                                    var dt_end = new Intl.DateTimeFormat('fr-FR', options).format(new Date(rows[i].dt_end));
+                                    if (i>0)
+                                    {
+                                      integrateLink = `<br /><a style='display:none' id='integratelink_${rows[i].id}' href="javascript:integrateInPreviousTrack('${rows[i].id}').then((value)=>{showHTMLTable('#parsedTable');$('#joinBtn').prop('disabled',false);$('#igcResult').html('');})">Integrate in previous track</a>`;
+                                    }
+                                    $(`${tableId}> tbody:last-child`).append(`<tr id='row_${rows[i].id}'><td>${i}</td><td>${dt_start}</td><td>${dt_end}</td><td>${rows[i].nb_fixes}</td><td>${rows[i].name}</td><td>${rows[i].type}</td><td><a id="aid_${rows[i].id}" href="javascript:getTrack('${rows[i].id}')">${rows[i].id}</a>${integrateLink}</td></tr>`);
+                                  };
+                  }).catch((error) => {
+                    console.log(error.toString());
+                  });
+    };
+    var getTrack = function(trackId){
+      getTrackASIgcString().then((igc_string)=>{
+        $("#aid_"+trackId).attr('href','data:octet/stream;charset=utf-8,' + encodeURIComponent(igc_string)); 
+        $("#aid_"+trackId).attr('title','Ready to download');
+        $("#aid_"+trackId).text('Ready to download: '+trackId);
+        $("#aid_"+trackId).attr('download',trackId+".igc");
+      });
+    }
+    //creates a pseudo "download" link for saving the produced IGC
+    var downloadIGCFile = function (filename, text) {
+          var theDownloadlink = $('<a>',{
+                          text: 'Clic and save the generated file',
+                          title: 'Download file',
+                          href: 'data:octet/stream;charset=utf-8,' + encodeURIComponent(text),
+                          download: filename
+                      }).appendTo('#downloadLink');
+        };
+
+    // Just make a html table with the content of the DB table tracks
+    var insertDBCallback = function(){
+      showHTMLTable("#parsedTable");
+      $('#joinBtn').removeAttr('disabled');
+      $('#joinDiv').show();
+    };
+
+    //sample function for uploading the igcResult string as a pseudo file like in a standard html form with a <input type='file'>
+    var simpleStringUploadAsFile = function (uploadURL, fileFormFieldName, fileName, data,name,password)
+    {
+
+      var fd = new FormData();
+      var file = new Blob([data], {type: 'plain/text'});
+
+      fd.append(fileFormFieldName, file, fileName);
+      fd.append('name',name);
+      fd.append('password',password);
+
+      $.ajax({
+        url: uploadURL,
+        method: 'post',
+        data: fd,
+        processData: false,
+        contentType: false ,
+        success: function(response){$("html").html(response);}
+      });
+    }
+
+    // Don't forget that nSQL().query() return a Promise because of its asynchronous conception
+    // promised_rows is in order [tracksQueryPromise,fixesQueryPromise]
+    var promisedDBRows = function(promised_rows){
+          var tracks_rows = promised_rows[0];
+          var fixes_rows = promised_rows[1];
+ //Minimal test
+ //       if (!isAnOverlapDetected(tracks_rows)){ //negative logic !
+ // Test returning the list of overlapped rows or an emply array if valid
+          var overlappedRowsIDs = getOverlappedRowsID(tracks_rows);
+          if(overlappedRowsIDs.length == 0){
+            var igcString = igcProducer(fixes_rows);
+            $("#igcResult").html(igcString);;
+            downloadIGCFile("TEMP.IGC", igcString);
+            $('#joinBtn').attr("disabled", true);
+            $('#uploadBtn').removeAttr('disabled');;
+            $('#uploadDiv').show();
+
+          }else{
+            for (var i=0; i<overlappedRowsIDs.length;i++){
+              $("#row_"+overlappedRowsIDs[i]).css('background-color', 'red');
+              $("#integratelink_"+overlappedRowsIDs[i]).show();
+            }
+            $("#igcResult").html("<h1 style='color: #FF0000'><b>OVERLAP DETECTED</b></h1>");
+            $('#joinBtn').attr("disabled", true);
+          }
+        }
+
+   // Retrieves the DB as an IGC file (in a javascript string)
+   var getDBasIGCString = function(){
+      var tracksQueryPromise = getDBTracksRowsAsPromise();
+      var fixesQueryPromise = getDBFixesRowsAsPromise();
+      Promise.all([tracksQueryPromise,fixesQueryPromise]).then(promisedDBRows).catch((error) => {
+                      console.log(error.toString());
+                    });   
+   };
+
+    initDB();
+     $(window).on('load', function() {
+        $('#filesFly').removeAttr('disabled');
+        $('#filesHike').removeAttr('disabled');
+     });
+
+    </script>
+    </head>
+
+    <body>
+    <div>
+      <p>
+      With basic overlapping detection…<br />
+      tested only with FIT files from Garmin® Fēnix 6x Pro or Garmin® Fēnix 3, IGC from SkyBean® SkyDrop and GPX files exported from Strava®<br/>
+      Please report issue on <a href="https://github.com/eltorio/CFDTrackJoiner/issues">the project page</a>.</p>
+      <span id='downloadLink'></span>
+      <br/>
+    </div>
+    <div>
+      <p>
+      <div id="fliesDiv">
+        <label for="filesFly" class="btn">Fly•ies (FIT,GPX or IGC format)</label>
+        <input id="filesFly" type='file' accept='.igc,.fit,.gpx' onchange='openFile(event, trackTypes.FLY, insertDBCallback)' multiple disabled/> 
+      </div>
+      </p>
+  </div>
+  <div>
+    <p>  
+    <div id="hikesDiv">
+      <label for="filesHike" class="btn">Hike•s (FIT,GPX or IGC format)</label>
+      <input id="filesHike" type='file' accept='.igc,.fit,.gpx' onchange='openFile(event,trackTypes.HIKE, insertDBCallback)' multiple disabled/>
+    </div>  
+  </p>
+</div>
+  <p>    
+    <div id="joinDiv" style='display:none'>
+      <label for="joinBtn" class="btn">Join tracks</label>
+      <input id="joinBtn" type='button' onclick='getDBasIGCString()' value="Join" disabled/>
+    </div>
+  </p>
+  <p>    
+    <div id="uploadDiv" style='display:none'>
+      <label for="uploadBtn" class="btn">Upload result</label>
+      <input id="uploadBtn" type='button' onclick="simpleStringUploadAsFile('upload.php','file','TEMP.IGC',$('#igcResult').html(),'ffvl_name','ffvl_password');" value='Upload' disabled/>
+    </div>
+  </p>  
+    <br>
+    <div id='output'>
+    <table class="paleBlueRows" id="parsedTable"> 
+      <thead>
+        <tr><td>Section</td><td>début</td><td>Fin</td><td>Nb Points</td><td>Fichier</td><td>Type</td><td>SHA256</td></tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+    </div>
+    <pre id='igcResult'>
+  </pre>
+    </body>
+    </html>

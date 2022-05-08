@@ -1,7 +1,6 @@
 {
     "compilerOptions": {
         "baseUrl": "./",
-        "sourceMap": true,
         "target": "ES2020",
         "module": "CommonJS",
         "lib": [
@@ -9,11 +8,11 @@
             "dom"
         ],
         "types": [
-            "node"
+            "node","crypto-js"
         ],
         "paths": {
             "~/*": [
-                "src/app_shared/*"
+                "src/app_shared/*",
             ],
             "@/*": [
                 "src/*"
