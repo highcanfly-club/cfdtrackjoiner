@@ -26,7 +26,7 @@ enum trackTypes {
   MIXED = "",
 }
 
-interface Track {
+export interface Track {
   id: string;
   dt_start: Date;
   ts_start: number;
@@ -38,7 +38,7 @@ interface Track {
   gliderType: string; //or empty string if unknown
 }
 
-interface Fix {
+export interface Fix {
   id?: string;
   track_id: string;
   point: { lat: number; lon: number };
@@ -93,9 +93,9 @@ let insertIGCTrackInDB = function (
 };
 /**
  * Insert on IGC track parsed with IGCParser goes in tracks , gps points in fixes
- * @param hashHex 
- * @param fileName 
- * @param trackType 
+ * @param hashHex
+ * @param fileName
+ * @param trackType
  * @returns An array of Promise resolving as type [Track[],...Fix[][]
  * so first element is Track[] followers are Fix[]
  */
@@ -270,17 +270,19 @@ let insertGPXTrackInDBAsPromise = function (
  * @param trackType
  * @param onDBInsertOKCallback
  */
- let insertFITTrackInDB = function (
+let insertFITTrackInDB = function (
   fitTrack: FitData,
   hashHex: string,
   fileName: string,
   trackType: trackTypes,
   onDBInsertOKCallback: Function
 ) {
-  insertFITTrackInDBAsPromise(fitTrack,hashHex,fileName,trackType).then((value)=>{
-    onDBInsertOKCallback();
-  })
-}
+  insertFITTrackInDBAsPromise(fitTrack, hashHex, fileName, trackType).then(
+    (value) => {
+      onDBInsertOKCallback();
+    }
+  );
+};
 
 /**
  * Insert on FIT track parsed with FITParser
@@ -539,111 +541,146 @@ let openGPXFileTreatSingle = function (
 /**
  * Single file reception (with on FileReader), on event:load parse and insert in DB
  * Generic versio
- * @param {*} file
- * @param {*} trackType
- * @param {*} onDBInsertOKCallback
+ * @param file
+ * @param trackType
+ * @param onDBInsertOKCallback
  */
-
 let openFileTreatSingle = function (
   file: File,
   trackType: trackTypes,
   onDBInsertOKCallback: Function
 ) {
-  let reader = new FileReader();
+  openFileTreatSingleAsPromise(file, trackType).then((value) => {
+    onDBInsertOKCallback();
+  });
+};
+
+/**
+ * Single file reception (with on FileReader), on event:load parse and insert in DB
+ * Generic versio
+ * @param file
+ * @param trackType
+ * @returns a Promise from openXXXFileAspromise
+ */
+let openFileTreatSingleAsPromise = function (
+  file: File,
+  trackType: trackTypes
+): Promise<[Track[], ...Fix[][]]> {
   let fileName = getFileName(file.name);
   let fileExtension = getFileExtension(fileName);
-  reader.addEventListener("load", function (event) {
-    let trackFile = event.target;
-    let fileContent = trackFile.result as string;
-    let hash =
-      fileExtension == "FIT"
-        ? CryptoJS.SHA256(arrayBufferToWordArray(fileContent))
-        : CryptoJS.SHA256(fileContent); // FIT format is binay
-    let hashHex = hash.toString(CryptoJS.enc.Hex);
-    console.log(fileName);
-    switch (fileExtension) {
-      case "FIT":
-        let fitParser = new FitParser({
-          force: true,
-          speedUnit: "km/h",
-          lengthUnit: "m",
-          temperatureUnit: "celcius",
-          elapsedRecordField: true,
-          mode: "list",
-        });
-        fitParser.parse(fileContent, function (error: string, data: FitData) {
-          // Handle result of parse method
-          if (error) {
-            alert("Une erreur s'est produite : FITParser " + error);
-            console.log(error);
-          } else {
-            insertFITTrackInDB(
-              data,
+  return new Promise<[Track[], ...Fix[][]]>((resolve, reject) => {
+    let reader = new FileReader();
+    reader.addEventListener("load", function (event) {
+      let trackFile = event.target;
+      let fileContent = trackFile.result as string;
+      let hash =
+        fileExtension == "FIT"
+          ? CryptoJS.SHA256(arrayBufferToWordArray(fileContent))
+          : CryptoJS.SHA256(fileContent); // FIT format is binay
+      let hashHex = hash.toString(CryptoJS.enc.Hex);
+      console.log(fileName);
+      switch (fileExtension) {
+        case "FIT":
+          let fitParser = new FitParser({
+            force: true,
+            speedUnit: "km/h",
+            lengthUnit: "m",
+            temperatureUnit: "celcius",
+            elapsedRecordField: true,
+            mode: "list",
+          });
+          fitParser.parse(fileContent, function (error: string, data: FitData) {
+            // Handle result of parse method
+            if (error) {
+              alert("Une erreur s'est produite : FITParser " + error);
+              reject("Une erreur s'est produite : FITParser " + error);
+            } else {
+              resolve(
+                insertFITTrackInDBAsPromise(data, hashHex, fileName, trackType)
+              );
+            }
+          });
+          break;
+        case "IGC":
+          resolve(
+            insertIGCTrackInDBAsPromise(
+              IGCParser.parse(fileContent),
               hashHex,
               fileName,
-              trackType,
-              onDBInsertOKCallback
-            );
-          }
-        });
-        break;
-      case "IGC":
-        insertIGCTrackInDB(
-          IGCParser.parse(fileContent),
-          hashHex,
-          fileName,
-          trackType,
-          onDBInsertOKCallback
-        );
-        break;
-      case "GPX":
-        let _gpxParser = new gpxParser();
-        _gpxParser.parse(fileContent);
-
-        if (_gpxParser.tracks[0].points.length > 0) {
-          insertGPXTrackInDB(
-            _gpxParser.tracks[0],
-            hashHex,
-            fileName,
-            trackType,
-            onDBInsertOKCallback
+              trackType
+            )
           );
-        } else {
-          alert("Une erreur s'est produite : GPXParser ");
-          console.log("Error: GPXParser ");
-        }
-        break;
-      default:
-      //TODO don't do nothing !
+          break;
+        case "GPX":
+          let _gpxParser = new gpxParser();
+          _gpxParser.parse(fileContent);
+
+          if (_gpxParser.tracks[0].points.length > 0) {
+            resolve(
+              insertGPXTrackInDBAsPromise(
+                _gpxParser.tracks[0],
+                hashHex,
+                fileName,
+                trackType
+              )
+            );
+          } else {
+            alert("Une erreur s'est produite : GPXParser ");
+            reject("Error: GPXParser ");
+          }
+          break;
+        default:
+          reject("Unknown error");
+      }
+    });
+    if (fileExtension == "FIT") {
+      reader.readAsArrayBuffer(file); // Fit files are binary so should get a byte array
+    } else if (fileExtension == "GPX" || fileExtension == "IGC") {
+      reader.readAsText(file); // GPX and IGC are text files
+    } else {
+      // TODO don't do nothing !!
     }
   });
-  if (fileExtension == "FIT") {
-    reader.readAsArrayBuffer(file); // Fit files are binary so should get a byte array
-  } else if (fileExtension == "GPX" || fileExtension == "IGC") {
-    reader.readAsText(file); // GPX and IGC are text files
-  } else {
-    // TODO don't do nothing !!
-  }
 };
 
 /**
  * Basically creates one openGPXFileTreatSingle per file (on multiple selection)
- * @param {*} event
- * @param {*} trackType
- * @param {*} onDBInsertOKCallback
+ * @param event
+ * @param trackType
+ * @param onDBInsertOKCallback
  */
 let openFile = function (
   event: Event,
   trackType: trackTypes,
   onDBInsertOKCallback: Function
 ) {
+  openFileAsPromise(event, trackType).then((value) => {
+    onDBInsertOKCallback();
+  });
+};
+
+/**
+ * Basically creates one openGPXFileTreatSingle per file (on multiple selection)
+ * @param event
+ * @param trackType
+ * @returns an array of Promise containing Promise<[Track[], ...Fix[][]][]>
+ * so: Promise<[
+ * Track[], ...Fix[][]
+ * ][]>
+ * in other words an array with each elements (corresponding to each file) containing a Track[] as first element and Fix[] as other elements
+ */
+let openFileAsPromise = function (
+  event: Event,
+  trackType: trackTypes
+): Promise<[Track[], ...Fix[][]][]> {
   let input = <HTMLInputElement>event.target;
   let files = input.files;
-
+  let promised: Promise<[Track[], ...Fix[][]]>[] = [];
   for (let i = 0; i < files.length; i++) {
     let file = files[i];
-    openFileTreatSingle(file, trackType, onDBInsertOKCallback);
+    promised.push(openFileTreatSingleAsPromise(file, trackType));
   }
+  return Promise.all(promised);
 };
 
 /**
@@ -1506,7 +1543,7 @@ let igcBRecordFormater = function (row: Fix): string {
 let igcProducer = function (rows: Fix[]): string {
   let szReturn = "";
   if (rows.length) {
-    igcHeaders(new Date(rows[0].dt));
+    szReturn += igcHeaders(new Date(rows[0].dt));
     let lastType: trackTypes = null;
     for (let i = 0; i < rows.length; i++) {
       if (i == 0) {
@@ -1621,4 +1658,7 @@ export {
   splitTrackIn3,
   trackTypes,
   openFile,
+  openFileAsPromise,
+  openFileTreatSingle,
+  openFileTreatSingleAsPromise,
 };
