@@ -218,9 +218,9 @@
                         uppercase
                       "
                       ><img class="w-6"
-                        :src="require('@/assets/GPX.svg')"
+                        :src="require('../assets/GPX.svg')"
                     />&nbsp;<img class="w-6"
-                        :src="require('@/assets/IGC.svg')"
+                        :src="require('../assets/IGC.svg')"
                     />&nbsp;<i
                         class="fas fa-download"
                       ></i></span

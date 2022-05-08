@@ -281,13 +281,13 @@
                           clickDownload(row.id, $event, fileTypes.IGC)
                         "
                         class="w-6"
-                        :src="require('@/assets/IGC.svg')" />&nbsp;
+                        :src="require('../assets/IGC.svg')" />&nbsp;
                       <img
                         @click.once="
                           clickDownload(row.id, $event, fileTypes.GPX)
                         "
                         class="w-6"
-                        :src="require('@/assets/GPX.svg')"
+                        :src="require('../assets/GPX.svg')"
                     /></span>
                   </td>
                 </tr>
