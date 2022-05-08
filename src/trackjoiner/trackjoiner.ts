@@ -26,6 +26,12 @@ enum trackTypes {
   MIXED = "",
 }
 
+enum fileTypes {
+  FIT = "FIT",
+  GPX = "GPX",
+  IGC = "IGC",
+}
+
 export interface Track {
   id: string;
   dt_start: Date;
@@ -567,20 +573,20 @@ let openFileTreatSingleAsPromise = function (
   trackType: trackTypes
 ): Promise<[Track[], ...Fix[][]]> {
   let fileName = getFileName(file.name);
-  let fileExtension = getFileExtension(fileName);
+  let fileExtension = getFileExtension(fileName) as fileTypes;
   return new Promise<[Track[], ...Fix[][]]>((resolve, reject) => {
     let reader = new FileReader();
     reader.addEventListener("load", function (event) {
       let trackFile = event.target;
       let fileContent = trackFile.result as string;
       let hash =
-        fileExtension == "FIT"
+        fileExtension == fileTypes.FIT
           ? CryptoJS.SHA256(arrayBufferToWordArray(fileContent))
           : CryptoJS.SHA256(fileContent); // FIT format is binay
       let hashHex = hash.toString(CryptoJS.enc.Hex);
       console.log(fileName);
       switch (fileExtension) {
-        case "FIT":
+        case fileTypes.FIT:
           let fitParser = new FitParser({
             force: true,
             speedUnit: "km/h",
@@ -601,7 +607,7 @@ let openFileTreatSingleAsPromise = function (
             }
           });
           break;
-        case "IGC":
+        case fileTypes.IGC:
           resolve(
             insertIGCTrackInDBAsPromise(
               IGCParser.parse(fileContent),
@@ -611,7 +617,7 @@ let openFileTreatSingleAsPromise = function (
             )
           );
           break;
-        case "GPX":
+        case fileTypes.GPX:
           let _gpxParser = new gpxParser();
           _gpxParser.parse(fileContent);
 
@@ -633,9 +639,12 @@ let openFileTreatSingleAsPromise = function (
           reject("Unknown error");
       }
     });
-    if (fileExtension == "FIT") {
+    if (fileExtension == fileTypes.FIT) {
       reader.readAsArrayBuffer(file); // Fit files are binary so should get a byte array
-    } else if (fileExtension == "GPX" || fileExtension == "IGC") {
+    } else if (
+      fileExtension == fileTypes.GPX ||
+      fileExtension == fileTypes.IGC
+    ) {
       reader.readAsText(file); // GPX and IGC are text files
     } else {
       // TODO don't do nothing !!
@@ -1475,12 +1484,57 @@ let igcAltitudeFormater = function (altitude: number): string {
   }
 };
 
-//Return a Promise with a string containing the IGC file of a trackId
+/**
+ * 
+ * @param trackId 
+ * @returns a Promise with a string containing the IGC file of a trackId
+ */
 let getTrackASIgcString = function (trackId?: string): Promise<string> {
   return new Promise(function (resolve) {
     getDBFixesRowsAsPromise(trackId).then((value) => {
       let igc_string = igcProducer(value);
       resolve(igc_string);
+    });
+  });
+};
+
+/**
+ * Create a GPX file with an array of fixes
+ * @param fixes 
+ * @returns a valid GPX file as a string
+ */
+let gpxProducer = function (fixes: Fix[]): string {
+  let result =
+    '<?xml version="1.0" encoding="UTF-8"?>\n<gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd" version="1.1" creator="CFDTrackjoiner">';
+  result += `<metadata/><trk><name></name><desc></desc><trkseg>`;
+  result += fixes.reduce((accum, curr) => {
+    let segmentTag = "";
+    if (curr.point.lat !== undefined && curr.point.lon !== undefined) {
+      segmentTag += `<trkpt lat="${curr.point.lat}" lon="${curr.point.lon}">`;
+      segmentTag +=
+        curr.gpsAltitude !== undefined ? `<ele>${curr.gpsAltitude}</ele>` : "";
+      segmentTag +=
+        curr.dt !== undefined
+          ? `<time>${new Date(curr.dt).toISOString()}</time>`
+          : "";
+      segmentTag += `</trkpt>`;
+    }
+    return (accum += segmentTag);
+  }, "");
+  result += "</trkseg></trk></gpx>";
+  return result;
+};
+
+/**
+ * 
+ * @param trackId 
+ * @returns a Promise with a string containing the GPX file of a trackId
+ */
+let getTrackASGpxString = function (trackId?: string): Promise<string> {
+  return new Promise(function (resolve) {
+    getDBFixesRowsAsPromise(trackId).then((value) => {
+      let gpx_string = gpxProducer(value);
+      resolve(gpx_string);
     });
   });
 };
@@ -1649,14 +1703,17 @@ export {
   getDBTracksRowsAsPromise,
   getDBFixesRowsAsPromise,
   getTrackASIgcString,
+  getTrackASGpxString,
   getOverlappedRowsID,
   igcProducer,
+  gpxProducer,
   integrateInPreviousTrack,
   nanoDB_name,
   showDB,
   splitTrackIn2,
   splitTrackIn3,
   trackTypes,
+  fileTypes,
   openFile,
   openFileAsPromise,
   openFileTreatSingle,

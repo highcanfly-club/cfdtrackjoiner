@@ -211,17 +211,21 @@
                     ><br />Dans la barre de titre sert à afficher l'identifiant
                     unique de la trace.<br /><br />
                     <span
-                      class="
+                      class="flex flex-nowrap
                         text-right text-sm
                         font-bold
                         text-blue-700
                         uppercase
                       "
-                      ><i class="fas fa-tools"></i>&nbsp;<i
+                      ><img class="w-6"
+                        :src="require('@/assets/GPX.svg')"
+                    />&nbsp;<img class="w-6"
+                        :src="require('@/assets/IGC.svg')"
+                    />&nbsp;<i
                         class="fas fa-download"
                       ></i></span
                     ><br />Dans le tableau servent à générer puis télécharger la
-                    trace concernée au format IGC.<br /><br />
+                    trace concernée au format IGC ou GPX.<br /><br />
                   </div>
 
                   <div class="absolute inset-0 px-4 sm:px-6">

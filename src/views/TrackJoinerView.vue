@@ -270,10 +270,25 @@
                     "
                   >
                     <span
-                      @click.once="clickDownload(row.id, $event)"
-                      class="cursor-pointer text-blue-600 hover:text-indigo-900"
-                      ><i class="fas fa-tools"></i
-                    ></span>
+                      class="
+                        flex flex-nowrap
+                        cursor-pointer
+                        text-blue-600
+                        hover:text-indigo-900
+                      "
+                      ><img
+                        @click.once="
+                          clickDownload(row.id, $event, fileTypes.IGC)
+                        "
+                        class="w-6"
+                        :src="require('@/assets/IGC.svg')" />&nbsp;
+                      <img
+                        @click.once="
+                          clickDownload(row.id, $event, fileTypes.GPX)
+                        "
+                        class="w-6"
+                        :src="require('@/assets/GPX.svg')"
+                    /></span>
                   </td>
                 </tr>
               </tbody>
@@ -494,14 +509,16 @@
   <track-joiner-help />
 </template>
 <script lang="ts">
-import { reactive, defineComponent } from "vue";
+import { reactive, ref, defineComponent } from "vue";
 import {
   initDB,
   getDBTracksRowsAsPromise,
   getTrackASIgcString,
+  getTrackASGpxString,
   getOverlappedRowsID,
   integrateInPreviousTrack,
   trackTypes,
+  fileTypes,
   openFileAsPromise,
   showDB,
   Track,
@@ -523,7 +540,7 @@ export default defineComponent({
       isLoading: false,
       downloadLink: "",
     });
-    const isHashVisible = false;
+    const isHashVisible = ref(false);
     return {
       commit_date: new Intl.DateTimeFormat("fr-FR", {
         year: "numeric",
@@ -533,6 +550,7 @@ export default defineComponent({
         minute: "numeric",
       }).format(new Date(Commit.cfdtrackjoiner)),
       state,
+      fileTypes,
       trackTypes,
       isHashVisible,
     };
@@ -582,24 +600,46 @@ export default defineComponent({
         });
       });
     },
-    clickDownload(trackId: string, event: MouseEvent) {
+    replaceNodeWithDownloadLink(
+      element: HTMLElement,
+      fileContent: string,
+      filename: string
+    ) {
+      var a = document.createElement("a");
+      var iLink = document.createElement("i");
+      iLink.className = "fas fa-download";
+      a.appendChild(iLink);
+      a.title = "Télécharger";
+      a.href =
+        "data:octet/stream;charset=utf-8," + encodeURIComponent(fileContent);
+      a.download = filename;
+      element.parentNode.replaceChild(a, element);
+    },
+    clickDownload(trackId: string, event: MouseEvent, type: fileTypes) {
       (this.state as ReactiveData).isLoading = true;
       setTimeout(() => {
-        getTrackASIgcString(trackId).then((igc_string) => {
-          var a = document.createElement("a");
-          var iLink = document.createElement("i");
-          iLink.className = "fas fa-download";
-          a.appendChild(iLink);
-          a.title = "Télécharger";
-          a.href =
-            "data:octet/stream;charset=utf-8," + encodeURIComponent(igc_string);
-          a.download = trackId + ".igc";
-          (event.target as HTMLElement).parentNode.replaceChild(
-            a,
-            event.target as HTMLElement
-          );
-          (this.state as ReactiveData).isLoading = false;
-        });
+        switch (type) {
+          case fileTypes.IGC:
+            getTrackASIgcString(trackId).then((igc_string) => {
+              this.replaceNodeWithDownloadLink(
+                event.target as HTMLElement,
+                igc_string,
+                trackId + "." + type
+              );
+              (this.state as ReactiveData).isLoading = false;
+            });
+            break;
+          case fileTypes.GPX:
+            getTrackASGpxString(trackId).then((gpx_string) => {
+              this.replaceNodeWithDownloadLink(
+                event.target as HTMLElement,
+                gpx_string,
+                trackId + "." + type
+              );
+              (this.state as ReactiveData).isLoading = false;
+            });
+            break;
+        }
       });
     },
     isOverlapped(row: Track, overlapped_rows: string[]) {
