@@ -78,11 +78,12 @@ let igcDate2ISO8601 = function (igcDate: string, igcTime: string): string {
 
 /**
  * Insert on IGC track parsed with IGCParser goes in tracks , gps points in fixes
- * @param {*} igcTrack
- * @param {string} hashHex
- * @param {string} fileName
- * @param {trackTypes} trackType
- * @param {Function} onDBInsertOKCallback
+ * @internal
+ * @param igcTrack 
+ * @param hashHex 
+ * @param fileName 
+ * @param trackType 
+ * @param onDBInsertOKCallback 
  */
 let insertIGCTrackInDB = function (
   igcTrack: IGCParser.IGCFile,
@@ -99,6 +100,7 @@ let insertIGCTrackInDB = function (
 };
 /**
  * Insert on IGC track parsed with IGCParser goes in tracks , gps points in fixes
+ * @internal
  * @param hashHex
  * @param fileName
  * @param trackType
@@ -181,6 +183,7 @@ let insertIGCTrackInDBAsPromise = function (
 /**
  * Insert on GPX track parsed with GPXParser (data.tracks[0].segments[0])
  * header goes in tracks , gps points in fixes
+ * @internal
  * @param gpxTrack
  * @param hashHex
  * @param fileName
@@ -203,6 +206,7 @@ let insertGPXTrackInDB = function (
 /**
  * Insert on GPX track parsed with GPXParser (data.tracks[0].segments[0])
  * header goes in tracks , gps points in fixes
+ * @internal
  * @param gpxTrack
  * @param hashHex
  * @param fileName
@@ -270,6 +274,7 @@ let insertGPXTrackInDBAsPromise = function (
  * TO BE CHECKED :
  * the only altitude my Fenix 6 gives is "enhanced_altitude" not sure all watches have this field
  * TO DO : find a basic watch without barometer for seing wich altitude it gives
+ * @internal
  * @param fitTrack
  * @param hashHex
  * @param fileName
@@ -296,6 +301,7 @@ let insertFITTrackInDB = function (
  * TO BE CHECKED :
  * the only altitude my Fenix 6 gives is "enhanced_altitude" not sure all watches have this field
  * TO DO : find a basic watch without barometer for seing wich altitude it gives
+ * @internal
  * @param fitTrack
  * @param hashHex
  * @param fileName
@@ -361,25 +367,28 @@ let insertFITTrackInDBAsPromise = function (
 };
 
 /**
- * basic path removal (works for windows/unices)
+ * 
  * @param fullPath
- * @returns
+ * @returns basic path removal (works for windows/unices)
  */
 const getFileName = function (fullPath: string): string {
   return fullPath.replace(/^.*[\\\/]/, "");
 };
 
 /**
- * basic file Extension (return file name if there is no extension) // TODO better handling
- * @param {string} fileName
- * @returns
+ * @param fileName
+ * @returns basic file Extension (return file name if there is no extension) // TODO better handling
  */
 const getFileExtension = function (fileName: string): string {
   return fileName.split(".").pop().split(/\#|\?/)[0].toUpperCase();
 };
 
-// CryptoJS  needs word array so this is an optimized conversion
-let arrayBufferToWordArray = function (ab) {
+/**
+ * CryptoJS  needs word array so this is an optimized conversion
+ * @param ab Input ArrayBuffer
+ * @returns the converted word array
+ */
+let arrayBufferToWordArray = function (ab:ArrayBuffer):CryptoJS.lib.WordArray {
   let i8a = new Uint8Array(ab);
   let a = [];
   for (let i = 0; i < i8a.length; i += 4) {
@@ -392,6 +401,7 @@ let arrayBufferToWordArray = function (ab) {
 
 /**
  * Single file reception (with on FileReader), on event:load parse and insert in DB
+ * @internal
  * @param file
  * @param trackType
  * @param onDBInsertOKCallback
@@ -429,6 +439,7 @@ let openIGCFileTreatSingle = function (
 
 /**
  * Basically creates one openIGCFileTreatSingle per file (on multiple selection)
+ * prefer openFile
  * @param event
  * @param trackType
  * @param onDBInsertOKCallback
@@ -449,6 +460,7 @@ let openIGCFile = function (
 
 /**
  * Single file reception (with on FileReader), on event:load parse and insert in DB
+ * @internal
  * @param {*} file
  * @param {*} trackType
  * @param {*} onDBInsertOKCallback
@@ -494,6 +506,7 @@ let openFITFileTreatSingle = function (
 
 /**
  * Basically creates one openFITFileTreatSingle per file (on multiple selection)
+ * prefer openFile
  * @param {*} event
  * @param {*} trackType
  * @param {*} onDBInsertOKCallback
@@ -514,6 +527,7 @@ let openFITFile = function (
 
 /**
  * Single file reception (with on FileReader), on event:load parse and insert in DB
+ * @internal
  * @param {File} file
  * @param {trackTypes} trackType
  * @param {Function} onDBInsertOKCallback
@@ -581,8 +595,8 @@ let openFileTreatSingleAsPromise = function (
       let fileContent = trackFile.result as string;
       let hash =
         fileExtension == fileTypes.FIT
-          ? CryptoJS.SHA256(arrayBufferToWordArray(fileContent))
-          : CryptoJS.SHA256(fileContent); // FIT format is binay
+          ? CryptoJS.SHA256(arrayBufferToWordArray(trackFile.result as ArrayBuffer))
+          : CryptoJS.SHA256(trackFile.result as string); // FIT format is binay
       let hashHex = hash.toString(CryptoJS.enc.Hex);
       console.log(fileName);
       switch (fileExtension) {
@@ -694,6 +708,7 @@ let openFileAsPromise = function (
 
 /**
  * Basically creates one openGPXFileTreatSingle per file (on multiple selection)
+ * prefer openFile
  * @param {*} event
  * @param {*} trackType
  * @param {*} onDBInsertOKCallback
@@ -714,6 +729,7 @@ let openGPXFile = function (
 
 /**
  * Creates the main nanoSQL database
+ * prefer using initDB()
  */
 let createDB = function () {
   nSQL()
@@ -801,7 +817,7 @@ let initDB = function () {
  * add milliseconds to Date object
  * @param {*} ts
  * @param {*} dateObject
- * @returns
+ * @returns a new Date = oldDate + ts in ms
  */
 let addTimestampToDateObject = function (ts: number, dateObject: Date): Date {
   let oDate = new Date();
@@ -858,6 +874,7 @@ let fixErroneousDT = function (trackId: string, realDTStart: Date) {
 /**
  * insert an array of fixes (probably created with an nSQL query)
  * return a Promise with the number of fixes inserted
+ * @internal
  * @param {string} trackId
  * @param {*} fixesArray
  * @returns a number with number of fixes inserted
@@ -1696,27 +1713,58 @@ let showDB = function (): void {
 };
 
 export {
+  addTimestampToDateObject,
+  ansiXOR,
+  arrayBufferToWordArray,
   changePartOfTrackType,
   changeTrackType,
-  initDB,
+  createDB,
+  cutOverlapping,
+  fileTypes,
   fixErroneousDT,
-  getDBTracksRowsAsPromise,
+  getDBFirstGliderType,
   getDBFixesRowsAsPromise,
-  getTrackASIgcString,
-  getTrackASGpxString,
+  getDBTrackDTStartAsPromise,
+  getDBTracksRowsAsPromise,
+  getFileExtension,
+  getFileName,
   getOverlappedRowsID,
-  igcProducer,
+  getTrackASGpxString,
+  getTrackASIgcString,
   gpxProducer,
+  igcAltitudeFormater,
+  igcBRecordFormater,
+  igcDate2ISO8601,
+  igcDateFormater,
+  igcHeaders,
+  igcLatFormater,
+  igcLonFormater,
+  igcProducer,
+  igcTimeFormater,
+  igcTypeCommentFormater,
+  initDB,
+  insertFITTrackInDB,
+  insertFITTrackInDBAsPromise,
+  insertFixesArrayInDB,
+  insertGPXTrackInDB,
+  insertGPXTrackInDBAsPromise,
+  insertIGCTrackInDB,
+  insertIGCTrackInDBAsPromise,
   integrateInPreviousTrack,
   isAnOverlapDetected,
   nanoDB_name,
-  showDB,
-  splitTrackIn2,
-  splitTrackIn3,
-  trackTypes,
-  fileTypes,
+  openFITFile,
+  openFITFileTreatSingle,
   openFile,
   openFileAsPromise,
   openFileTreatSingle,
   openFileTreatSingleAsPromise,
+  openGPXFile,
+  openGPXFileTreatSingle,
+  openIGCFile,
+  openIGCFileTreatSingle,
+  showDB,
+  splitTrackIn2,
+  splitTrackIn3,
+  trackTypes,
 };

@@ -10,7 +10,8 @@
     "build-cf": "vue-cli-service build  --report && node uglify2.mjs",
     "uglify": "node uglify.js",
     "lint": "vue-cli-service lint",
-    "doc": "npx typedoc --entryPoints ./src/trackjoiner/trackjoiner.ts"
+    "doc": "npx typedoc --entryPoints ./src/trackjoiner/trackjoiner.ts",
+    "serve-doc": "npx typedoc --entryPoints ./src/trackjoiner/trackjoiner.ts && npx http-server docs"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "~6.1.1",
