@@ -197,7 +197,7 @@
                       >Chevauchement</span
                     ><br />
                     Si ce bouton apparaît, cela signifie que 2 traces se
-                    supperposent au moins partiellement. Essayer de cliquer.
+                    superposent au moins partiellement. Essayez de cliquer.
                     Avec un peu de chance le système essaiera de l'intégrer
                     automatiquement dans la précédente.<br /><br />
                     <span

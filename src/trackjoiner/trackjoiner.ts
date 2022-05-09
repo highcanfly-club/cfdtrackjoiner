@@ -1708,6 +1708,7 @@ export {
   igcProducer,
   gpxProducer,
   integrateInPreviousTrack,
+  isAnOverlapDetected,
   nanoDB_name,
   showDB,
   splitTrackIn2,
