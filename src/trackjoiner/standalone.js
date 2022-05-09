@@ -9,6 +9,7 @@ const getTrackASIgcString = Trackjoiner.getTrackASIgcString;
 const getOverlappedRowsID = Trackjoiner.getOverlappedRowsID;
 const igcProducer = Trackjoiner.igcProducer;
 const integrateInPreviousTrack = Trackjoiner.integrateInPreviousTrack;
+const isAnOverlapDetected = Trackjoiner.isAnOverlapDetected;
 const nanoDB_name = Trackjoiner.nanoDB_name;
 const _showDB = Trackjoiner.showDB;
 const splitTrackIn2 = Trackjoiner.splitTrackIn2;
