@@ -521,8 +521,9 @@ import {
   fileTypes,
   openFileAsPromise,
   showDB,
-  Track,
+ 
 } from "trackjoiner";
+import type {Track,} from "trackjoiner";
 import TrackJoinerHelp from "./trackJoinerHelp.vue";
 import Commit from "../../commit.json";
 

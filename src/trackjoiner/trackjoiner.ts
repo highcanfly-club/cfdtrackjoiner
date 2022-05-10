@@ -10,9 +10,10 @@
 import { nSQL } from "@nano-sql/core";
 import CryptoJS from "crypto-js"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
 import IGCParser from "igc-parser"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
-import { FitParser, FitData } from "fit-parser";
+import { FitParser } from "fit-parser";
+import type {FitData} from "fit-parser";
 import gpxParser from "gpxparser"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
-import { Track as GpxParserTrack } from "gpxparser";
+import type { Track as GpxParserTrack } from "gpxparser";
 
 const nanoDB_name = "cfdmv_db";
 const _DEFAULT_GLIDER_TYPE = "UNKOWN";

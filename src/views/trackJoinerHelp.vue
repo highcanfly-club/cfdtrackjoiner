@@ -277,7 +277,8 @@
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, ref,Ref } from "vue";
+import { defineComponent, ref } from "vue";
+import type {Ref} from "vue";
 import {
   Dialog,
   DialogOverlay,
@@ -287,7 +288,7 @@ import {
 } from "@headlessui/vue";
 import Commit from "../../commit.json";
 
-import { RouteLocation } from "vue-router";
+import type { RouteLocation } from "vue-router";
 
 export default defineComponent({
   data() {
