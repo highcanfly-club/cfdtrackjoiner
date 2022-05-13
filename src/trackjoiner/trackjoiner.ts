@@ -67,7 +67,7 @@ class TrackjoinerDB extends Dexie {
     super(nanoDB_name);
     this.version(DB_SCHEMA_VERSION).stores({
       fixes: '++id,track_id,ts',
-      tracks: 'id,ts_start,gliderType',
+      tracks: 'id,ts_start,gliderType, nb_fixes',
     });
   }
 }
@@ -1118,6 +1118,7 @@ const cutOverlapping = function (
 
             const fixesDelete = myTrackjoinerDB.fixes.where('track_id').equalsIgnoreCase(track_B_row.id).delete();
             const tracksDelete = myTrackjoinerDB.tracks.delete(track_B_row.id);
+            const orphanedDeletedTracks = removeOrphanedTracksAsPromise();
 
             Promise.all([
               insertTrackB1,
@@ -1126,6 +1127,7 @@ const cutOverlapping = function (
               nbB2FixesInserted,
               fixesDelete,
               tracksDelete,
+              orphanedDeletedTracks,
             ]).then(
               (
               ) => {
@@ -1498,6 +1500,13 @@ const integrateInPreviousTrack = function (trackId: string): Promise<string[]> {
 };
 
 /**
+ * Remove tracks without any fixes
+ * @returns the number of deleted tracks
+ */
+const removeOrphanedTracksAsPromise = function ():Promise<number>{
+  return myTrackjoinerDB.tracks.where('nb_fixes').equals(0).delete() as Promise<number>;
+}
+/**
  * showDB the DB in console
  */
 const showDB = function (): void {
@@ -1571,6 +1580,7 @@ export {
   openGPXFileTreatSingle,
   openIGCFile,
   openIGCFileTreatSingle,
+  removeOrphanedTracksAsPromise,
   showDB,
   splitTrackIn2,
   splitTrackIn3,
