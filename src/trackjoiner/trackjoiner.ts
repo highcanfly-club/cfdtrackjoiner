@@ -1173,7 +1173,7 @@ const getDBTrackRowAsPromise = function (trackId: string): Promise<Track[]> {
 const getDBFirstGliderType = function (): Promise<string> {
   return new Promise<string>(function (resolve) {
     myTrackjoinerDB.tracks.where('gliderType')
-      .noneOf([IGC_GLIDER_TYPE])
+      .noneOf([IGC_GLIDER_TYPE,''])
       .toArray().then((tracks: Track[]) => {
         if (
           typeof tracks[0] != "undefined" &&
@@ -1563,6 +1563,7 @@ export {
   insertIGCTrackInDBAsPromise,
   integrateInPreviousTrack,
   isAnOverlapDetected,
+  myTrackjoinerDB,
   nanoDB_name,
   openFITFile,
   openFITFileTreatSingle,
@@ -1578,4 +1579,5 @@ export {
   splitTrackIn2,
   splitTrackIn3,
   trackTypes,
+  TrackjoinerDB,
 };

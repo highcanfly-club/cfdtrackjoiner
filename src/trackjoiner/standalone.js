@@ -1,4 +1,5 @@
 //top level declaration for compatibity 
+/*eslint-disable*/
 const changePartOfTrackType = Trackjoiner.changePartOfTrackType;
 const changeTrackType = Trackjoiner.changeTrackType;
 const initDB = Trackjoiner.initDB;
