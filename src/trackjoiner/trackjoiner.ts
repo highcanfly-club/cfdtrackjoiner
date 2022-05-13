@@ -804,23 +804,19 @@ const insertFixesArrayInDB = function (
   trackId: string,
   fixesArray: Fix[]
 ): Promise<number> {
-  return new Promise(function (resolve) {
-    const promisedAll = [];
+    const fixes: Fix[] = [];
     for (let i = 0; i < fixesArray.length; i++) {
-      promisedAll.push(
-        myTrackjoinerDB.fixes.add({
-          track_id: trackId,
-          point: fixesArray[i].point,
-          gpsAltitude: fixesArray[i].gpsAltitude,
-          preciseAltitude: fixesArray[i].preciseAltitude,
-          dt: fixesArray[i].dt,
-          ts: fixesArray[i].ts,
-          type: fixesArray[i].type,
-        })
-      );
+      fixes.push({
+        track_id: trackId,
+        point: fixesArray[i].point,
+        gpsAltitude: fixesArray[i].gpsAltitude,
+        preciseAltitude: fixesArray[i].preciseAltitude,
+        dt: fixesArray[i].dt,
+        ts: fixesArray[i].ts,
+        type: fixesArray[i].type,
+      });
     }
-    Promise.all(promisedAll).then((value) => resolve(value.length));
-  });
+    return myTrackjoinerDB.fixes.bulkAdd(fixes) as Promise<number>;
 };
 
 /**
