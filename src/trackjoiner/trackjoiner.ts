@@ -6,20 +6,21 @@
  * FIT Parser is adapted from Dimitrios Kanellopoulos's project https://github.com/jimmykane/fit-parser (MIT license)
  * GPX Parser is adapted from Lucas Trebouet's project https://github.com/Luuka/GPXParser.js (MIT license)
  */
-/* eslint-disable */
-import { nSQL } from "@nano-sql/core";
+import Dexie from "dexie";
 import CryptoJS from "crypto-js"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
 import IGCParser from "igc-parser"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
 import { FitParser } from "fit-parser";
-import type {FitData} from "fit-parser";
+import type { FitData } from "fit-parser";
 import gpxParser from "gpxparser"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
 import type { Track as GpxParserTrack } from "gpxparser";
 
+const DB_SCHEMA_VERSION = 1;
 const nanoDB_name = "cfdmv_db";
 const _DEFAULT_GLIDER_TYPE = "UNKOWN";
 const IGC_GLIDER_TYPE = "TO-BE-FILLED";
 const FIT_DEFAULT_GLIDER_TYPE = "FIT-GLIDER";
 let igc_glider_type = IGC_GLIDER_TYPE;
+let myTrackjoinerDB = null as TrackjoinerDB;
 
 enum trackTypes {
   FLY = "F",
@@ -45,8 +46,11 @@ export interface Track {
   gliderType: string; //or empty string if unknown
 }
 
+/**
+ * 
+ */
 export interface Fix {
-  id?: string;
+  id?: number;
   track_id: string;
   point: { lat: number; lon: number };
   preciseAltitude?: number;
@@ -56,13 +60,24 @@ export interface Fix {
   type: trackTypes;
 }
 
+class TrackjoinerDB extends Dexie {
+  fixes!: Dexie.Table<Fix, number>;
+  tracks!: Dexie.Table<Track, string>;
+  constructor() {
+    super(nanoDB_name);
+    this.version(DB_SCHEMA_VERSION).stores({
+      fixes: '++id,track_id,ts',
+      tracks: 'id,ts_start,gliderType',
+    });
+  }
+}
 /**
  * still no XOR in EMEA JavaScript
  * @param a
  * @param b
  * @returns ANSI XOR
  */
-let ansiXOR = function (a: boolean, b: boolean): boolean {
+const ansiXOR = function (a: boolean, b: boolean): boolean {
   return (a || b) && !(a && b);
 };
 
@@ -72,8 +87,8 @@ let ansiXOR = function (a: boolean, b: boolean): boolean {
  * @param igcTime
  * @returns basic Iso date creation from IGC file
  */
-let igcDate2ISO8601 = function (igcDate: string, igcTime: string): string {
-  let jsDate = igcDate + "T" + igcTime + "Z";
+const igcDate2ISO8601 = function (igcDate: string, igcTime: string): string {
+  const jsDate = igcDate + "T" + igcTime + "Z";
   return jsDate;
 };
 
@@ -86,12 +101,12 @@ let igcDate2ISO8601 = function (igcDate: string, igcTime: string): string {
  * @param trackType 
  * @param onDBInsertOKCallback 
  */
-let insertIGCTrackInDB = function (
+const insertIGCTrackInDB = function (
   igcTrack: IGCParser.IGCFile,
   hashHex: string,
   fileName: string,
   trackType: trackTypes,
-  onDBInsertOKCallback: Function
+  onDBInsertOKCallback: () => void
 ) {
   insertIGCTrackInDBAsPromise(igcTrack, hashHex, fileName, trackType).then(
     () => {
@@ -108,42 +123,37 @@ let insertIGCTrackInDB = function (
  * @returns An array of Promise resolving as type [Track[],...Fix[][]
  * so first element is Track[] followers are Fix[]
  */
-let insertIGCTrackInDBAsPromise = function (
+const insertIGCTrackInDBAsPromise = function (
   igcTrack: IGCParser.IGCFile,
   hashHex: string,
   fileName: string,
   trackType: trackTypes
-): Promise<[Track[], ...Fix[][]]> {
-  let igcDate = igcTrack.date;
+): Promise<[string, ...number[]]> {
   igc_glider_type =
     typeof igcTrack.gliderType != "undefined" && igcTrack.gliderType.length > 0
       ? igcTrack.gliderType
       : IGC_GLIDER_TYPE;
-  let isoDt_start = new Date(igcTrack.fixes[0].timestamp);
-  let unixTs_start = isoDt_start.getTime();
-  let isoDt_end = new Date(igcTrack.fixes[igcTrack.fixes.length - 1].timestamp);
-  let unixTs_end = isoDt_end.getTime();
-  nSQL().useDatabase(nanoDB_name);
-  let trackPromise = <Promise<Track[]>>nSQL("tracks")
-    .query("upsert", [
-      {
-        id: hashHex,
-        dt_start: isoDt_start,
-        ts_start: unixTs_start,
-        dt_end: isoDt_end,
-        ts_end: unixTs_end,
-        nb_fixes: igcTrack.fixes.length,
-        name: fileName,
-        type: trackType,
-        gliderType: igc_glider_type,
-      },
-    ])
-    .exec()
-    .catch((error: Error) => {
-      console.log(error.toString());
-    });
-  let fixInserted: Promise<Fix[]>[] = [];
+  const isoDt_start = new Date(igcTrack.fixes[0].timestamp);
+  const unixTs_start = isoDt_start.getTime();
+  const isoDt_end = new Date(igcTrack.fixes[igcTrack.fixes.length - 1].timestamp);
+  const unixTs_end = isoDt_end.getTime();
+
+  const trackPromise = myTrackjoinerDB.tracks.add({
+    id: hashHex,
+    dt_start: isoDt_start,
+    ts_start: unixTs_start,
+    dt_end: isoDt_end,
+    ts_end: unixTs_end,
+    nb_fixes: igcTrack.fixes.length,
+    name: fileName,
+    type: trackType,
+    gliderType: igc_glider_type,
+  }) as Promise<string>;
+
+  const fixes: Fix[] = [];
+  let bulkFixInsert = null as Promise<number>;
   for (let i = 0; i < igcTrack.fixes.length; i++) {
+    //loop faster than .map
     if (igcTrack.fixes[i].valid) {
       // fill pressureAltitude with gpsAltitude if empty, this is for filling the DB in the preciseAltitude field
       if (
@@ -152,33 +162,27 @@ let insertIGCTrackInDBAsPromise = function (
       ) {
         igcTrack.fixes[i].pressureAltitude = igcTrack.fixes[i].gpsAltitude;
       }
-      fixInserted.push(
-        <Promise<Fix[]>>nSQL("fixes")
-          .query("upsert", [
-            {
-              track_id: hashHex,
-              point: {
-                lat: igcTrack.fixes[i].latitude,
-                lon: igcTrack.fixes[i].longitude,
-              },
-              gpsAltitude: igcTrack.fixes[i].gpsAltitude,
-              preciseAltitude: igcTrack.fixes[i].pressureAltitude,
-              dt: new Date(igcTrack.fixes[i].timestamp).toISOString(),
-              ts: igcTrack.fixes[i].timestamp,
-              type: trackType, //WIP use IGC for hike
-            },
-          ])
-          .exec()
-          .catch((error: Error) => {
-            console.log(error.toString());
-          })
-      );
+      fixes.push({
+        track_id: hashHex,
+        point: {
+          lat: igcTrack.fixes[i].latitude,
+          lon: igcTrack.fixes[i].longitude,
+        },
+        gpsAltitude: igcTrack.fixes[i].gpsAltitude,
+        preciseAltitude: igcTrack.fixes[i].pressureAltitude,
+        dt: new Date(igcTrack.fixes[i].timestamp),
+        ts: igcTrack.fixes[i].timestamp,
+        type: trackType, //WIP use IGC for hike
+      })
     }
+  }
+  if (fixes.length){
+    bulkFixInsert = myTrackjoinerDB.fixes.bulkAdd(fixes);
   }
   // Promise.all(fixInserted).then(() => {
   //   console.log("igc inserted");
   // });
-  return Promise.all([trackPromise, ...fixInserted]);
+  return Promise.all([trackPromise, bulkFixInsert]);
 };
 
 /**
@@ -191,15 +195,15 @@ let insertIGCTrackInDBAsPromise = function (
  * @param trackType
  * @param onDBInsertOKCallback
  */
-let insertGPXTrackInDB = function (
+const insertGPXTrackInDB = function (
   gpxTrack: GpxParserTrack,
   hashHex: string,
   fileName: string,
   trackType: trackTypes,
-  onDBInsertOKCallback: Function
+  onDBInsertOKCallback: () => void
 ) {
   insertGPXTrackInDBAsPromise(gpxTrack, hashHex, fileName, trackType).then(
-    (value) => {
+    () => {
       onDBInsertOKCallback();
     }
   );
@@ -215,58 +219,45 @@ let insertGPXTrackInDB = function (
  * @returns An array of Promise resolving as type [Track[],...Fix[][]
  * so first element is Track[] followers are Fix[]
  */
-let insertGPXTrackInDBAsPromise = function (
+const insertGPXTrackInDBAsPromise = function (
   gpxTrack: GpxParserTrack,
   hashHex: string,
   fileName: string,
   trackType: trackTypes
-): Promise<[Track[], ...Fix[][]]> {
-  let gpxDate = gpxTrack.points[0].time;
-  let isoDt_start = gpxTrack.points[0].time;
-  let unixTs_start = isoDt_start.getTime();
-  let isoDt_end = gpxTrack.points[gpxTrack.points.length - 1].time;
-  let unixTs_end = isoDt_end.getTime();
-  nSQL().useDatabase(nanoDB_name);
-  let trackPromise = <Promise<Track[]>>nSQL("tracks")
-    .query("upsert", [
-      {
-        id: hashHex,
-        dt_start: isoDt_start,
-        ts_start: unixTs_start,
-        dt_end: isoDt_end,
-        ts_end: unixTs_end,
-        nb_fixes: gpxTrack.points.length,
-        name: fileName,
-        type: trackType,
-        gliderType: "",
-      },
-    ])
-    .exec()
-    .catch((error: Error) => {
-      console.log(error.toString());
-    });
-  let fixInserted: Promise<Fix[]>[] = [];
+): Promise<[string, ...number[]]> {
+  const isoDt_start = gpxTrack.points[0].time;
+  const unixTs_start = isoDt_start.getTime();
+  const isoDt_end = gpxTrack.points[gpxTrack.points.length - 1].time;
+  const unixTs_end = isoDt_end.getTime();
+  const trackPromise = myTrackjoinerDB.tracks.add({
+    id: hashHex,
+    dt_start: isoDt_start,
+    ts_start: unixTs_start,
+    dt_end: isoDt_end,
+    ts_end: unixTs_end,
+    nb_fixes: gpxTrack.points.length,
+    name: fileName,
+    type: trackType,
+    gliderType: "",
+  }) as Promise<string>;
+
+  const fixes: Fix[] = [];
+  let bulkFixInsert = null as Promise<number>;
   for (let i = 0; i < gpxTrack.points.length; i++) {
-    fixInserted.push(
-      <Promise<Fix[]>>nSQL("fixes")
-        .query("upsert", [
-          {
-            track_id: hashHex,
-            point: { lat: gpxTrack.points[i].lat, lon: gpxTrack.points[i].lon },
-            gpsAltitude: gpxTrack.points[i].ele,
-            preciseAltitude: gpxTrack.points[i].ele, //no precise altitude on GPX
-            dt: gpxTrack.points[i].time.toISOString(),
-            ts: gpxTrack.points[i].time.getTime(),
-            type: trackType, //WIP use IGC for hike
-          },
-        ])
-        .exec()
-        .catch((error: Error) => {
-          console.log(error.toString());
-        })
-    );
+    fixes.push({
+      track_id: hashHex,
+      point: { lat: gpxTrack.points[i].lat, lon: gpxTrack.points[i].lon },
+      gpsAltitude: gpxTrack.points[i].ele,
+      preciseAltitude: gpxTrack.points[i].ele, //no precise altitude on GPX
+      dt: gpxTrack.points[i].time,
+      ts: gpxTrack.points[i].time.getTime(),
+      type: trackType, //WIP use IGC for hike
+    });
   }
-  return Promise.all([trackPromise, ...fixInserted]);
+  if (fixes.length){
+    bulkFixInsert = myTrackjoinerDB.fixes.bulkAdd(fixes);
+  }
+  return Promise.all([trackPromise, bulkFixInsert]);
 };
 
 /**
@@ -282,15 +273,15 @@ let insertGPXTrackInDBAsPromise = function (
  * @param trackType
  * @param onDBInsertOKCallback
  */
-let insertFITTrackInDB = function (
+const insertFITTrackInDB = function (
   fitTrack: FitData,
   hashHex: string,
   fileName: string,
   trackType: trackTypes,
-  onDBInsertOKCallback: Function
+  onDBInsertOKCallback: () => void
 ) {
   insertFITTrackInDBAsPromise(fitTrack, hashHex, fileName, trackType).then(
-    (value) => {
+    () => {
       onDBInsertOKCallback();
     }
   );
@@ -308,63 +299,51 @@ let insertFITTrackInDB = function (
  * @param fileName
  * @param trackType
  */
-let insertFITTrackInDBAsPromise = function (
+const insertFITTrackInDBAsPromise = function (
   fitTrack: FitData,
   hashHex: string,
   fileName: string,
   trackType: trackTypes
-): Promise<[Track[], ...Fix[][]]> {
-  let unixTs_start = fitTrack.records[0].timestamp.getTime();
-  let unixTs_end =
+): Promise<[string, ...number[]]> {
+  const unixTs_start = fitTrack.records[0].timestamp.getTime();
+  const unixTs_end =
     fitTrack.records[fitTrack.records.length - 1].timestamp.getTime();
-  nSQL().useDatabase(nanoDB_name);
-  let trackPromise = <Promise<Track[]>>nSQL("tracks")
-    .query("upsert", [
-      {
-        id: hashHex,
-        dt_start: fitTrack.records[0].timestamp,
-        ts_start: unixTs_start,
-        dt_end: fitTrack.records[fitTrack.records.length - 1].timestamp,
-        ts_end: unixTs_end,
-        nb_fixes: fitTrack.records.length,
-        name: fileName,
-        type: trackType,
-        gliderType: FIT_DEFAULT_GLIDER_TYPE,
-      },
-    ])
-    .exec()
-    .catch((error: Error) => {
-      console.log(error.toString());
-    });
-  let fixInserted: Promise<Fix[]>[] = [];
+  const trackPromise = myTrackjoinerDB.tracks.add({
+    id: hashHex,
+    dt_start: fitTrack.records[0].timestamp,
+    ts_start: unixTs_start,
+    dt_end: fitTrack.records[fitTrack.records.length - 1].timestamp,
+    ts_end: unixTs_end,
+    nb_fixes: fitTrack.records.length,
+    name: fileName,
+    type: trackType,
+    gliderType: FIT_DEFAULT_GLIDER_TYPE,
+  }) as Promise<string>;
+
+  const fixes: Fix[] = [];
+  let bulkFixInsert = null as Promise<number>;
   for (let i = 0; i < fitTrack.records.length; i++) {
-    let gpsAltitude =
+    const gpsAltitude =
       typeof fitTrack.records[i].enhanced_altitude != "undefined"
         ? fitTrack.records[i].enhanced_altitude
         : fitTrack.records[i].altitude;
-    fixInserted.push(
-      <Promise<Fix[]>>nSQL("fixes")
-        .query("upsert", [
-          {
-            track_id: hashHex,
-            point: {
-              lat: fitTrack.records[i].position_lat,
-              lon: fitTrack.records[i].position_long,
-            },
-            gpsAltitude: gpsAltitude,
-            preciseAltitude: fitTrack.records[i].enhanced_altitude,
-            dt: fitTrack.records[i].timestamp.toISOString(),
-            ts: fitTrack.records[i].timestamp.getTime(),
-            type: trackType, // WIP use FIT for fly
-          },
-        ])
-        .exec()
-        .catch((error: Error) => {
-          console.log(error.toString());
-        })
-    );
+      fixes.push({
+        track_id: hashHex,
+        point: {
+          lat: fitTrack.records[i].position_lat,
+          lon: fitTrack.records[i].position_long,
+        },
+        gpsAltitude: gpsAltitude,
+        preciseAltitude: fitTrack.records[i].enhanced_altitude,
+        dt: fitTrack.records[i].timestamp,
+        ts: fitTrack.records[i].timestamp.getTime(),
+        type: trackType, // WIP use FIT for fly
+      });
   }
-  return Promise.all([trackPromise, ...fixInserted]);
+  if (fixes.length){
+    bulkFixInsert = myTrackjoinerDB.fixes.bulkAdd(fixes);
+  }
+  return Promise.all([trackPromise, bulkFixInsert]);
 };
 
 /**
@@ -373,7 +352,7 @@ let insertFITTrackInDBAsPromise = function (
  * @returns basic path removal (works for windows/unices)
  */
 const getFileName = function (fullPath: string): string {
-  return fullPath.replace(/^.*[\\\/]/, "");
+  return fullPath.replace(/^.*[\\/]/, "");
 };
 
 /**
@@ -381,7 +360,7 @@ const getFileName = function (fullPath: string): string {
  * @returns basic file Extension (return file name if there is no extension) // TODO better handling
  */
 const getFileExtension = function (fileName: string): string {
-  return fileName.split(".").pop().split(/\#|\?/)[0].toUpperCase();
+  return fileName.split(".").pop().split(/#|\?/)[0].toUpperCase();
 };
 
 /**
@@ -389,9 +368,9 @@ const getFileExtension = function (fileName: string): string {
  * @param ab Input ArrayBuffer
  * @returns the converted word array
  */
-let arrayBufferToWordArray = function (ab:ArrayBuffer):CryptoJS.lib.WordArray {
-  let i8a = new Uint8Array(ab);
-  let a = [];
+const arrayBufferToWordArray = function (ab: ArrayBuffer): CryptoJS.lib.WordArray {
+  const i8a = new Uint8Array(ab);
+  const a = [];
   for (let i = 0; i < i8a.length; i += 4) {
     a.push(
       (i8a[i] << 24) | (i8a[i + 1] << 16) | (i8a[i + 2] << 8) | i8a[i + 3]
@@ -407,25 +386,25 @@ let arrayBufferToWordArray = function (ab:ArrayBuffer):CryptoJS.lib.WordArray {
  * @param trackType
  * @param onDBInsertOKCallback
  */
-let openIGCFileTreatSingle = function (
+const openIGCFileTreatSingle = function (
   file: File,
   trackType: trackTypes,
-  onDBInsertOKCallback: Function
+  onDBInsertOKCallback: () => void
 ) {
-  let reader = new FileReader();
+  const reader = new FileReader();
   reader.addEventListener("load", function (event) {
-    let igcFile = event.target;
-    let text = igcFile.result as string;
-    let fileName = getFileName(file.name);
-    let hash = CryptoJS.SHA256(text);
-    let hashHex = hash.toString(CryptoJS.enc.Hex);
+    const igcFile = event.target;
+    const text = igcFile.result as string;
+    const fileName = getFileName(file.name);
+    const hash = CryptoJS.SHA256(text);
+    const hashHex = hash.toString(CryptoJS.enc.Hex);
     console.log(
       "fileName:" +
-        fileName +
-        "\n" +
-        text.substring(0, 200) +
-        "\nLXSB Last 100 chars\n" +
-        text.slice(-100)
+      fileName +
+      "\n" +
+      text.substring(0, 200) +
+      "\nLXSB Last 100 chars\n" +
+      text.slice(-100)
     );
     insertIGCTrackInDB(
       IGCParser.parse(text),
@@ -445,16 +424,16 @@ let openIGCFileTreatSingle = function (
  * @param trackType
  * @param onDBInsertOKCallback
  */
-let openIGCFile = function (
+const openIGCFile = function (
   event: Event,
   trackType: trackTypes,
-  onDBInsertOKCallback: Function
+  onDBInsertOKCallback: () => void
 ) {
-  let input = event.target as HTMLInputElement;
-  let files = input.files;
+  const input = event.target as HTMLInputElement;
+  const files = input.files;
 
   for (let i = 0; i < files.length; i++) {
-    let file = files[i];
+    const file = files[i];
     openIGCFileTreatSingle(file, trackType, onDBInsertOKCallback);
   }
 };
@@ -466,12 +445,12 @@ let openIGCFile = function (
  * @param {*} trackType
  * @param {*} onDBInsertOKCallback
  */
-let openFITFileTreatSingle = function (
+const openFITFileTreatSingle = function (
   file: File,
   trackType: trackTypes,
-  onDBInsertOKCallback: Function
+  onDBInsertOKCallback: () => void
 ) {
-  let fitParser = new FitParser({
+  const fitParser = new FitParser({
     force: true,
     speedUnit: "km/h",
     lengthUnit: "m",
@@ -479,13 +458,13 @@ let openFITFileTreatSingle = function (
     elapsedRecordField: true,
     mode: "list",
   });
-  let reader = new FileReader();
+  const reader = new FileReader();
   reader.addEventListener("load", function (event) {
-    let fitFile = event.target;
-    let blob = fitFile.result as ArrayBuffer;
-    let fileName = getFileName(file.name);
-    let hash = CryptoJS.SHA256(arrayBufferToWordArray(blob));
-    let hashHex = hash.toString(CryptoJS.enc.Hex);
+    const fitFile = event.target;
+    const blob = fitFile.result as ArrayBuffer;
+    const fileName = getFileName(file.name);
+    const hash = CryptoJS.SHA256(arrayBufferToWordArray(blob));
+    const hashHex = hash.toString(CryptoJS.enc.Hex);
     console.log(fileName);
     fitParser.parse(blob, function (error: string, data: FitData) {
       // Handle result of parse method
@@ -512,16 +491,16 @@ let openFITFileTreatSingle = function (
  * @param {*} trackType
  * @param {*} onDBInsertOKCallback
  */
-let openFITFile = function (
+const openFITFile = function (
   event: Event,
   trackType: trackTypes,
-  onDBInsertOKCallback: Function
+  onDBInsertOKCallback: () => void
 ) {
-  let input = <HTMLInputElement>event.target;
-  let files = input.files;
+  const input = <HTMLInputElement>event.target;
+  const files = input.files;
 
   for (let i = 0; i < files.length; i++) {
-    let file = files[i];
+    const file = files[i];
     openFITFileTreatSingle(file, trackType, onDBInsertOKCallback);
   }
 };
@@ -533,20 +512,20 @@ let openFITFile = function (
  * @param {trackTypes} trackType
  * @param {Function} onDBInsertOKCallback
  */
-let openGPXFileTreatSingle = function (
+const openGPXFileTreatSingle = function (
   file: File,
   trackType: trackTypes,
-  onDBInsertOKCallback: Function
+  onDBInsertOKCallback: () => void
 ) {
-  let reader = new FileReader();
+  const reader = new FileReader();
   reader.addEventListener("load", function (event) {
-    let gpxFile = event.target;
-    let gpxText = gpxFile.result as string;
-    let fileName = getFileName(file.name);
-    let hash = CryptoJS.SHA256(gpxText);
-    let hashHex = hash.toString(CryptoJS.enc.Hex);
+    const gpxFile = event.target;
+    const gpxText = gpxFile.result as string;
+    const fileName = getFileName(file.name);
+    const hash = CryptoJS.SHA256(gpxText);
+    const hashHex = hash.toString(CryptoJS.enc.Hex);
     console.log(fileName);
-    let _gpxParser = new gpxParser();
+    const _gpxParser = new gpxParser();
     _gpxParser.parse(gpxText);
     insertGPXTrackInDB(
       _gpxParser.tracks[0],
@@ -566,12 +545,12 @@ let openGPXFileTreatSingle = function (
  * @param trackType
  * @param onDBInsertOKCallback
  */
-let openFileTreatSingle = function (
+const openFileTreatSingle = function (
   file: File,
   trackType: trackTypes,
-  onDBInsertOKCallback: Function
+  onDBInsertOKCallback: () => void
 ) {
-  openFileTreatSingleAsPromise(file, trackType).then((value) => {
+  openFileTreatSingleAsPromise(file, trackType).then(() => {
     onDBInsertOKCallback();
   });
 };
@@ -583,45 +562,47 @@ let openFileTreatSingle = function (
  * @param trackType
  * @returns a Promise from openXXXFileAspromise
  */
-let openFileTreatSingleAsPromise = function (
+const openFileTreatSingleAsPromise = function (
   file: File,
   trackType: trackTypes
-): Promise<[Track[], ...Fix[][]]> {
-  let fileName = getFileName(file.name);
-  let fileExtension = getFileExtension(fileName) as fileTypes;
-  return new Promise<[Track[], ...Fix[][]]>((resolve, reject) => {
-    let reader = new FileReader();
+): Promise<[string, ...number[]]> {
+  const fileName = getFileName(file.name);
+  const fileExtension = getFileExtension(fileName) as fileTypes;
+  return new Promise<[string, ...number[]]>((resolve, reject) => {
+    const reader = new FileReader();
     reader.addEventListener("load", function (event) {
-      let trackFile = event.target;
-      let fileContent = trackFile.result as string;
-      let hash =
+      const trackFile = event.target;
+      const fileContent = trackFile.result as string;
+      const hash =
         fileExtension == fileTypes.FIT
           ? CryptoJS.SHA256(arrayBufferToWordArray(trackFile.result as ArrayBuffer))
           : CryptoJS.SHA256(trackFile.result as string); // FIT format is binay
-      let hashHex = hash.toString(CryptoJS.enc.Hex);
+      const hashHex = hash.toString(CryptoJS.enc.Hex);
       console.log(fileName);
       switch (fileExtension) {
         case fileTypes.FIT:
-          let fitParser = new FitParser({
-            force: true,
-            speedUnit: "km/h",
-            lengthUnit: "m",
-            temperatureUnit: "celcius",
-            elapsedRecordField: true,
-            mode: "list",
-          });
-          fitParser.parse(fileContent, function (error: string, data: FitData) {
-            // Handle result of parse method
-            if (error) {
-              alert("Une erreur s'est produite : FITParser " + error);
-              reject("Une erreur s'est produite : FITParser " + error);
-            } else {
-              resolve(
-                insertFITTrackInDBAsPromise(data, hashHex, fileName, trackType)
-              );
-            }
-          });
-          break;
+          {
+            const fitParser = new FitParser({
+              force: true,
+              speedUnit: "km/h",
+              lengthUnit: "m",
+              temperatureUnit: "celcius",
+              elapsedRecordField: true,
+              mode: "list",
+            });
+            fitParser.parse(fileContent, function (error: string, data: FitData) {
+              // Handle result of parse method
+              if (error) {
+                alert("Une erreur s'est produite : FITParser " + error);
+                reject("Une erreur s'est produite : FITParser " + error);
+              } else {
+                resolve(
+                  insertFITTrackInDBAsPromise(data, hashHex, fileName, trackType)
+                );
+              }
+            });
+            break;
+          }
         case fileTypes.IGC:
           resolve(
             insertIGCTrackInDBAsPromise(
@@ -633,23 +614,25 @@ let openFileTreatSingleAsPromise = function (
           );
           break;
         case fileTypes.GPX:
-          let _gpxParser = new gpxParser();
-          _gpxParser.parse(fileContent);
+          {
+            const _gpxParser = new gpxParser();
+            _gpxParser.parse(fileContent);
 
-          if (_gpxParser.tracks[0].points.length > 0) {
-            resolve(
-              insertGPXTrackInDBAsPromise(
-                _gpxParser.tracks[0],
-                hashHex,
-                fileName,
-                trackType
-              )
-            );
-          } else {
-            alert("Une erreur s'est produite : GPXParser ");
-            reject("Error: GPXParser ");
+            if (_gpxParser.tracks[0].points.length > 0) {
+              resolve(
+                insertGPXTrackInDBAsPromise(
+                  _gpxParser.tracks[0],
+                  hashHex,
+                  fileName,
+                  trackType
+                )
+              );
+            } else {
+              alert("Une erreur s'est produite : GPXParser ");
+              reject("Error: GPXParser ");
+            }
+            break;
           }
-          break;
         default:
           reject("Unknown error");
       }
@@ -673,12 +656,12 @@ let openFileTreatSingleAsPromise = function (
  * @param trackType
  * @param onDBInsertOKCallback
  */
-let openFile = function (
+const openFile = function (
   event: Event,
   trackType: trackTypes,
-  onDBInsertOKCallback: Function
+  onDBInsertOKCallback: () => void
 ) {
-  openFileAsPromise(event, trackType).then((value) => {
+  openFileAsPromise(event, trackType).then(() => {
     onDBInsertOKCallback();
   });
 };
@@ -693,15 +676,15 @@ let openFile = function (
  * ][]>
  * in other words an array with each elements (corresponding to each file) containing a Track[] as first element and Fix[] as other elements
  */
-let openFileAsPromise = function (
+const openFileAsPromise = function (
   event: Event,
   trackType: trackTypes
-): Promise<[Track[], ...Fix[][]][]> {
-  let input = <HTMLInputElement>event.target;
-  let files = input.files;
-  let promised: Promise<[Track[], ...Fix[][]]>[] = [];
+): Promise<[string, ...number[]][]> {
+  const input = <HTMLInputElement>event.target;
+  const files = input.files;
+  const promised: Promise<[string, ...number[]]>[] = [];
   for (let i = 0; i < files.length; i++) {
-    let file = files[i];
+    const file = files[i];
     promised.push(openFileTreatSingleAsPromise(file, trackType));
   }
   return Promise.all(promised);
@@ -714,104 +697,48 @@ let openFileAsPromise = function (
  * @param {*} trackType
  * @param {*} onDBInsertOKCallback
  */
-let openGPXFile = function (
+const openGPXFile = function (
   event: Event,
   trackType: trackTypes,
-  onDBInsertOKCallback: Function
+  onDBInsertOKCallback: () => void
 ) {
-  let input = <HTMLInputElement>event.target;
-  let files = input.files;
+  const input = <HTMLInputElement>event.target;
+  const files = input.files;
 
   for (let i = 0; i < files.length; i++) {
-    let file = files[i];
+    const file = files[i];
     openGPXFileTreatSingle(file, trackType, onDBInsertOKCallback);
   }
 };
 
 /**
- * Creates the main nanoSQL database
+ * Creates the main Dexie database
  * prefer using initDB()
  */
-let createDB = function () {
-  nSQL()
-    .createDatabase({
-      id: nanoDB_name,
-      mode: "TEMP", // in Memory
-      tables: [
-        {
-          name: "tracks",
-          model: {
-            "id:string": { pk: true },
-            "dt_start:date": {},
-            "ts_start:int": {},
-            "dt_end:date": {},
-            "ts_end:int": {},
-            "nb_fixes:number": {},
-            "name:string": {},
-            "type:string": {}, // F for flight H for hike
-            "gliderType:string": {}, //or empty string if unknown
-          },
-        },
-        {
-          name: "fixes",
-          model: {
-            "id:uuid": { pk: true, ai: true },
-            "track_id:string": {},
-            "point:geo": {},
-            "preciseAltitude:number": {},
-            "gpsAltitude:number": {},
-            "dt:date": {},
-            "ts:int": {},
-            "type:string": {}, // F for flight H for hike
-          },
-        },
-      ],
-      version: 3, // current schema/database version
-      onVersionUpdate: (prevVersion) => {
-        // migrate versions
-        return new Promise((res, rej) => {
-          switch (prevVersion) {
-            case 1:
-              // migrate v1 to v2
-              res(2);
-              break;
-            case 2:
-              // migrate v2 to v3
-              res(3);
-              break;
-          }
-        });
-      },
-    })
-    .then(() => {
-      // ready to query!
-    })
-    .catch((error: Error) => {
-      console.log(error.toString());
-    });
-
-  nSQL().useDatabase(nanoDB_name);
+const createDB = function () {
+  myTrackjoinerDB = new TrackjoinerDB();
+  myTrackjoinerDB.open();
 };
 
 /**
  * drop DB if exists (on some browser even in-memory persists)
  * next creates the DB in memory
  */
-let initDB = function () {
+const initDB = function () {
   // Database creation
-  if (nSQL().listDatabases().includes(nanoDB_name)) {
-    nSQL()
-      .dropDatabase(nanoDB_name)
-      .then(() => {
+  Dexie.exists(nanoDB_name).then((exists) => {
+    if (exists) {
+      Dexie.delete(nanoDB_name).then(() => {
         console.log("Database dropped !");
         createDB();
       })
-      .catch((error: Error) => {
-        console.log(error.toString());
-      });
-  } else {
-    createDB();
-  }
+        .catch((error: Error) => {
+          console.log(error.toString());
+        });
+    } else {
+      createDB();
+    }
+  })
 };
 
 /**
@@ -820,8 +747,8 @@ let initDB = function () {
  * @param {*} dateObject
  * @returns a new Date = oldDate + ts in ms
  */
-let addTimestampToDateObject = function (ts: number, dateObject: Date): Date {
-  let oDate = new Date();
+const addTimestampToDateObject = function (ts: number, dateObject: Date): Date {
+  const oDate = new Date();
   oDate.setTime(dateObject.getTime() + ts);
   return oDate;
 };
@@ -831,40 +758,33 @@ let addTimestampToDateObject = function (ts: number, dateObject: Date): Date {
  * @param {string} trackId
  * @param {*} realDTStart
  */
-let fixErroneousDT = function (trackId: string, realDTStart: Date) {
-  let tracksPromise: Promise<Track[]> = null;
-  let fixesPromise: Promise<Fix[]>[] = [];
+const fixErroneousDT = function (trackId: string, realDTStart: Date) {
+  let tracksPromise: Promise<number> = null;
+  const fixesPromise: Promise<number>[] = [];
   getDBTrackRowAsPromise(trackId).then((track) => {
-    let Δt = realDTStart.getTime() - new Date(track[0].dt_start).getTime();
-    tracksPromise = nSQL("tracks")
-      .query("upsert", {})
-      .where(["id", "=", trackId])
-      .updateImmutable({
-        dt_start: addTimestampToDateObject(
-          Δt,
-          new Date(track[0].dt_start)
-        ).toISOString(),
-        ts_start: track[0].ts_start + Δt,
-        dt_end: addTimestampToDateObject(
-          Δt,
-          new Date(track[0].dt_end)
-        ).toISOString(),
-        ts_end: track[0].ts_end + Δt,
-      })
-      .exec() as Promise<Track[]>;
+    const Δt = realDTStart.getTime() - new Date(track[0].dt_start).getTime();
+    tracksPromise = myTrackjoinerDB.tracks.update(trackId, {
+      dt_start: addTimestampToDateObject(
+        Δt,
+        new Date(track[0].dt_start)
+      ),
+      ts_start: track[0].ts_start + Δt,
+      dt_end: addTimestampToDateObject(
+        Δt,
+        new Date(track[0].dt_end)
+      ),
+      ts_end: track[0].ts_end + Δt,
+    });
+
     getDBFixesTrackRowAsPromise(trackId).then((fixes) => {
       for (let i = 0; i < fixes.length; i++) {
         fixesPromise.push(
-          nSQL("fixes")
-            .query("upsert", {})
-            .where(["id", "=", fixes[i].id])
-            .updateImmutable({
-              dt: addTimestampToDateObject(
-                Δt,
-                new Date(fixes[i].dt)
-              ).toISOString(),
-            })
-            .exec() as Promise<Fix[]>
+          myTrackjoinerDB.fixes.update(fixes[i], {
+            dt: addTimestampToDateObject(
+              Δt,
+              new Date(fixes[i].dt)
+            )
+          })
         );
       }
     });
@@ -880,27 +800,23 @@ let fixErroneousDT = function (trackId: string, realDTStart: Date) {
  * @param {*} fixesArray
  * @returns a number with number of fixes inserted
  */
-let insertFixesArrayInDB = function (
+const insertFixesArrayInDB = function (
   trackId: string,
   fixesArray: Fix[]
 ): Promise<number> {
-  return new Promise(function (resolve, reject) {
-    let promisedAll = [];
+  return new Promise(function (resolve) {
+    const promisedAll = [];
     for (let i = 0; i < fixesArray.length; i++) {
       promisedAll.push(
-        nSQL("fixes")
-          .query("upsert", [
-            {
-              track_id: trackId,
-              point: fixesArray[i].point,
-              gpsAltitude: fixesArray[i].gpsAltitude,
-              preciseAltitude: fixesArray[i].preciseAltitude,
-              dt: fixesArray[i].dt,
-              ts: fixesArray[i].ts,
-              type: fixesArray[i].type,
-            },
-          ])
-          .exec()
+        myTrackjoinerDB.fixes.add({
+          track_id: trackId,
+          point: fixesArray[i].point,
+          gpsAltitude: fixesArray[i].gpsAltitude,
+          preciseAltitude: fixesArray[i].preciseAltitude,
+          dt: fixesArray[i].dt,
+          ts: fixesArray[i].ts,
+          type: fixesArray[i].type,
+        })
       );
     }
     Promise.all(promisedAll).then((value) => resolve(value.length));
@@ -914,7 +830,7 @@ let insertFixesArrayInDB = function (
  * @param {*} dt_cut
  * @returns
  */
-let splitTrackIn2 = function (
+const splitTrackIn2 = function (
   trackId: string,
   dt_cut: Date
 ): Promise<string[]> {
@@ -929,12 +845,12 @@ let splitTrackIn2 = function (
  * @param {Date} dt_cut_2
  * @returns
  */
-let splitTrackIn3 = function (
+const splitTrackIn3 = function (
   trackId: string,
   dt_cut_1: Date,
   dt_cut_2: Date
 ): Promise<string[]> {
-  return new Promise(function (resolve, reject) {
+  return new Promise(function (resolve) {
     let P1FixesInsertedPromise: Promise<number> = null;
     let P2FixesInsertedPromise: Promise<number> = null;
     let P3FixesInsertedPromise: Promise<number> = null;
@@ -942,47 +858,20 @@ let splitTrackIn3 = function (
     let track_p2_id: CryptoJS.lib.WordArray = null;
     let track_p3_id: CryptoJS.lib.WordArray = null;
     getDBTrackRowAsPromise(trackId).then((rows) => {
-      let trackRow = rows[0];
-      let ts_cut_1 = dt_cut_1.getTime();
-      let ts_cut_2 = dt_cut_2.getTime();
+      const trackRow = rows[0];
+      const ts_cut_1 = dt_cut_1.getTime();
+      const ts_cut_2 = dt_cut_2.getTime();
       if (trackRow.ts_start < ts_cut_1 && trackRow.ts_end > ts_cut_2) {
         track_p1_id = CryptoJS.SHA256(trackRow.id + "-P1");
         track_p2_id = CryptoJS.SHA256(trackRow.id + "-P2");
         track_p3_id = CryptoJS.SHA256(trackRow.id + "-P3");
-        nSQL().useDatabase(nanoDB_name);
-        let readGliderTypeIfAny = getDBFirstGliderType();
-        let P1_fixes_promise = nSQL("fixes")
-          .query("select")
-          .where([
-            ["track_id", "=", trackRow.id],
-            "AND",
-            ["ts", "<=", ts_cut_1],
-          ])
-          .exec() as Promise<Fix[]>;
-        let P2_fixes_promise = nSQL("fixes")
-          .query("select")
-          .where([
-            ["track_id", "=", trackRow.id],
-            "AND",
-            [["ts", ">", ts_cut_1], "AND", ["ts", "<", ts_cut_2]],
-          ])
-          .exec() as Promise<Fix[]>;
-        let P3_fixes_promise = nSQL("fixes")
-          .query("select")
-          .where([
-            ["track_id", "=", trackRow.id],
-            "AND",
-            ["ts", ">=", ts_cut_2],
-          ])
-          .exec() as Promise<Fix[]>;
-        let fixes_delete_promise = nSQL("fixes")
-          .query("delete")
-          .where(["track_id", "=", trackId])
-          .exec();
-        let tracks_delete_promise = nSQL("tracks")
-          .query("delete")
-          .where(["id", "=", trackId])
-          .exec();
+        const readGliderTypeIfAny = getDBFirstGliderType();
+        const P1_fixes_promise = myTrackjoinerDB.fixes.where('track_id').equalsIgnoreCase(trackRow.id).and((fix) => { return fix.ts < ts_cut_1 }).toArray();
+        const P2_fixes_promise = myTrackjoinerDB.fixes.where('track_id').equalsIgnoreCase(trackRow.id).and((fix) => { return (fix.ts > ts_cut_1) && (fix.ts < ts_cut_2) }).toArray();
+        const P3_fixes_promise = myTrackjoinerDB.fixes.where('track_id').equalsIgnoreCase(trackRow.id).and((fix) => { return fix.ts > ts_cut_2 }).toArray();
+        const fixes_delete_promise = myTrackjoinerDB.fixes.where('track_id').equalsIgnoreCase(trackId).delete();
+        const tracks_delete_promise = myTrackjoinerDB.tracks.delete(trackId);
+
         Promise.all([
           P1_fixes_promise,
           P2_fixes_promise,
@@ -991,94 +880,79 @@ let splitTrackIn3 = function (
           fixes_delete_promise,
           tracks_delete_promise,
         ]).then((promised) => {
-          let P1_fixes = promised[0];
-          let P2_fixes = promised[1];
-          let P3_fixes = promised[2];
+          const P1_fixes = promised[0];
+          const P2_fixes = promised[1];
+          const P3_fixes = promised[2];
           igc_glider_type = promised[3];
-          let splittedId: string[] = [];
-          let promisedAll = [];
+          const splittedId: string[] = [];
+          const promisedAll = [];
           if (P1_fixes.length > 0) {
             promisedAll.push(
-              nSQL("tracks")
-                .query("upsert", [
-                  {
-                    id: track_p1_id,
-                    dt_start: new Date(trackRow.ts_start),
-                    ts_start: trackRow.ts_start,
-                    dt_end: new Date(ts_cut_1 - 1),
-                    ts_end: ts_cut_1 - 1,
-                    nb_fixes: P1_fixes.length,
-                    name: trackRow.name + "-P1",
-                    type: trackRow.type,
-                    gliderType:
-                      trackRow.type == trackTypes.FLY ? igc_glider_type : "",
-                  },
-                ])
-                .exec()
-                .then((value) => {
-                  P1FixesInsertedPromise = insertFixesArrayInDB(
-                    track_p1_id.toString(CryptoJS.enc.Hex),
-                    P1_fixes
-                  );
-                  splittedId.push(track_p1_id.toString(CryptoJS.enc.Hex));
-                })
+              myTrackjoinerDB.tracks.add({
+                id: track_p1_id.toString(CryptoJS.enc.Hex),
+                dt_start: new Date(trackRow.ts_start),
+                ts_start: trackRow.ts_start,
+                dt_end: new Date(ts_cut_1 - 1),
+                ts_end: ts_cut_1 - 1,
+                nb_fixes: P1_fixes.length,
+                name: trackRow.name + "-P1",
+                type: trackRow.type,
+                gliderType:
+                  trackRow.type == trackTypes.FLY ? igc_glider_type : "",
+              }).then(() => {
+                P1FixesInsertedPromise = insertFixesArrayInDB(
+                  track_p1_id.toString(CryptoJS.enc.Hex),
+                  P1_fixes
+                );
+                splittedId.push(track_p1_id.toString(CryptoJS.enc.Hex));
+              })
             );
           }
           if (P2_fixes.length > 0) {
             promisedAll.push(
-              nSQL("tracks")
-                .query("upsert", [
-                  {
-                    id: track_p2_id,
-                    dt_start: new Date(ts_cut_1),
-                    ts_start: ts_cut_1,
-                    dt_end: new Date(ts_cut_2),
-                    ts_end: ts_cut_2,
-                    nb_fixes: P2_fixes.length,
-                    name: trackRow.name + "-P2",
-                    type: trackRow.type,
-                    gliderType:
-                      trackRow.type == trackTypes.FLY ? igc_glider_type : "",
-                  },
-                ])
-                .exec()
-                .then((value) => {
-                  P2FixesInsertedPromise = insertFixesArrayInDB(
-                    track_p2_id.toString(CryptoJS.enc.Hex),
-                    P2_fixes
-                  );
-                  splittedId.push(track_p2_id.toString(CryptoJS.enc.Hex));
-                })
+              myTrackjoinerDB.tracks.add({
+                id: track_p2_id.toString(CryptoJS.enc.Hex),
+                dt_start: new Date(ts_cut_1),
+                ts_start: ts_cut_1,
+                dt_end: new Date(ts_cut_2),
+                ts_end: ts_cut_2,
+                nb_fixes: P2_fixes.length,
+                name: trackRow.name + "-P2",
+                type: trackRow.type,
+                gliderType:
+                  trackRow.type == trackTypes.FLY ? igc_glider_type : "",
+              }).then(() => {
+                P2FixesInsertedPromise = insertFixesArrayInDB(
+                  track_p2_id.toString(CryptoJS.enc.Hex),
+                  P2_fixes
+                );
+                splittedId.push(track_p2_id.toString(CryptoJS.enc.Hex));
+              })
             );
           }
           if (P3_fixes.length > 0) {
             promisedAll.push(
-              nSQL("tracks")
-                .query("upsert", [
-                  {
-                    id: track_p3_id,
-                    dt_start: new Date(ts_cut_2 + 1),
-                    ts_start: ts_cut_2 + 1,
-                    dt_end: new Date(trackRow.ts_end),
-                    ts_end: trackRow.ts_end,
-                    nb_fixes: P3_fixes.length,
-                    name: trackRow.name + "-P3",
-                    type: trackRow.type,
-                    gliderType:
-                      trackRow.type == trackTypes.FLY ? igc_glider_type : "",
-                  },
-                ])
-                .exec()
-                .then((value) => {
-                  P3FixesInsertedPromise = insertFixesArrayInDB(
-                    track_p3_id.toString(CryptoJS.enc.Hex),
-                    P3_fixes
-                  );
-                  splittedId.push(track_p3_id.toString(CryptoJS.enc.Hex));
-                })
+              myTrackjoinerDB.tracks.add({
+                id: track_p3_id.toString(CryptoJS.enc.Hex),
+                dt_start: new Date(ts_cut_2 + 1),
+                ts_start: ts_cut_2 + 1,
+                dt_end: new Date(trackRow.ts_end),
+                ts_end: trackRow.ts_end,
+                nb_fixes: P3_fixes.length,
+                name: trackRow.name + "-P3",
+                type: trackRow.type,
+                gliderType:
+                  trackRow.type == trackTypes.FLY ? igc_glider_type : "",
+              }).then(() => {
+                P3FixesInsertedPromise = insertFixesArrayInDB(
+                  track_p3_id.toString(CryptoJS.enc.Hex),
+                  P3_fixes
+                );
+                splittedId.push(track_p3_id.toString(CryptoJS.enc.Hex));
+              })
             );
           }
-          Promise.all(promisedAll).then((value) => {
+          Promise.all([P1FixesInsertedPromise, P2FixesInsertedPromise, P3FixesInsertedPromise, ...promisedAll]).then(() => {
             resolve(splittedId);
           });
         });
@@ -1099,29 +973,29 @@ let splitTrackIn3 = function (
  * @param {string} new_type
  * @returns
  */
-let changePartOfTrackType = function (
+const changePartOfTrackType = function (
   trackId: string,
   dt_start: Date,
   dt_end: Date,
   new_type: trackTypes
 ): Promise<string[]> {
-  return new Promise(function (resolve, reject) {
+  return new Promise(function (resolve) {
     getDBTrackRowAsPromise(trackId).then((rows) => {
-      let trackRow = rows[0];
-      let ts_start = dt_start.getTime();
-      let ts_end = dt_end.getTime();
+      const trackRow = rows[0];
+      const ts_start = dt_start.getTime();
+      const ts_end = dt_end.getTime();
       if (ansiXOR(ts_start == trackRow.ts_start, ts_end == trackRow.ts_end)) {
         if (ts_start == trackRow.ts_start) {
           splitTrackIn2(trackId, dt_end).then((value) => {
             console.log("Done split changed track is: " + value[0]);
-            changeTrackType(value[0], new_type).then((retval) => {
+            changeTrackType(value[0], new_type).then(() => {
               resolve(value);
             });
           });
         } else {
           splitTrackIn2(trackId, dt_start).then((value) => {
             console.log("Done split changed track is: " + value[1]);
-            changeTrackType(value[1], new_type).then((retval) => {
+            changeTrackType(value[1], new_type).then(() => {
               resolve(value);
             });
           });
@@ -1130,12 +1004,12 @@ let changePartOfTrackType = function (
         if (ts_start > trackRow.ts_start && ts_end < trackRow.ts_end) {
           splitTrackIn3(trackId, dt_start, dt_end).then((value) => {
             console.log("Done split changed track is: " + value[1]);
-            changeTrackType(value[1], new_type).then((retval) => {
+            changeTrackType(value[1], new_type).then(() => {
               resolve(value);
             });
           });
         } else {
-          changeTrackType(trackId, new_type).then((retval) => {
+          changeTrackType(trackId, new_type).then(() => {
             resolve([trackId]);
           });
         }
@@ -1150,19 +1024,15 @@ let changePartOfTrackType = function (
  * @param {*} new_type
  * @returns
  */
-let changeTrackType = function (
+const changeTrackType = function (
   trackId: string,
   new_type: trackTypes
 ): Promise<trackTypes> {
-  return new Promise(function (resolve, reject) {
-    let tracksPromise = nSQL("tracks")
-      .query("upsert", [{ type: new_type }])
-      .where(["id", "=", trackId])
-      .exec() as Promise<Track[]>;
-    let fixesPromise = nSQL("fixes")
-      .query("upsert", [{ type: new_type }])
-      .where(["track_id", "=", trackId])
-      .exec() as Promise<Fix[]>;
+  return new Promise(function (resolve) {
+    const tracksPromise = myTrackjoinerDB.tracks.update(trackId,
+      { type: new_type }
+    );
+    const fixesPromise = myTrackjoinerDB.fixes.where('track_id').equalsIgnoreCase(trackId).modify({ type: new_type });
     Promise.all([tracksPromise, fixesPromise]).then(() => resolve(new_type));
   });
 };
@@ -1177,17 +1047,17 @@ let changeTrackType = function (
  * @param {string} track_B_id
  * @returns  a Promise with filled value with an array containing the 2 new trackId as string
  */
-let cutOverlapping = function (
+const cutOverlapping = function (
   track_A_id: string,
   track_B_id: string
 ): Promise<string[]> {
   return new Promise(function (resolve, reject) {
-    let A_promise = getDBTrackRowAsPromise(track_A_id);
-    let B_promise = getDBTrackRowAsPromise(track_B_id);
+    const A_promise = getDBTrackRowAsPromise(track_A_id);
+    const B_promise = getDBTrackRowAsPromise(track_B_id);
 
     Promise.all([A_promise, B_promise]).then((promisedDBRows) => {
-      let track_A_row = promisedDBRows[0][0];
-      let track_B_row = promisedDBRows[1][0];
+      const track_A_row = promisedDBRows[0][0];
+      const track_B_row = promisedDBRows[1][0];
       if (
         typeof track_A_row != "undefined" &&
         typeof track_B_row != "undefined"
@@ -1198,88 +1068,61 @@ let cutOverlapping = function (
         ) {
           //so A is in B
           console.log(track_A_id + " is in " + track_B_id);
-          let track_B1_id = CryptoJS.SHA256(track_B_row.id + "-B1");
-          let track_B2_id = CryptoJS.SHA256(track_B_row.id + "-B2");
-          let splittedId = [
+          const track_B1_id = CryptoJS.SHA256(track_B_row.id + "-B1");
+          const track_B2_id = CryptoJS.SHA256(track_B_row.id + "-B2");
+          const splittedId = [
             track_B1_id.toString(CryptoJS.enc.Hex),
             track_B2_id.toString(CryptoJS.enc.Hex),
           ];
-          nSQL().useDatabase(nanoDB_name);
-          let B1_fixes_promise = nSQL("fixes")
-            .query("select")
-            .where([
-              ["track_id", "=", track_B_row.id],
-              "AND",
-              ["ts", "<", track_A_row.ts_start],
-            ])
-            .exec() as Promise<Fix[]>;
-          let B2_fixes_promise = nSQL("fixes")
-            .query("select")
-            .where([
-              ["track_id", "=", track_B_row.id],
-              "AND",
-              ["ts", ">", track_A_row.ts_end],
-            ])
-            .exec() as Promise<Fix[]>;
-          let igc_glider_type_promise = getDBFirstGliderType();
+          const B1_fixes_promise = myTrackjoinerDB.fixes.where('track_id').equalsIgnoreCase(track_B_row.id).and((fix: Fix) => { return fix.ts < track_A_row.ts_start }).toArray();
+          const B2_fixes_promise = myTrackjoinerDB.fixes.where('track_id').equalsIgnoreCase(track_B_row.id).and((fix: Fix) => { return fix.ts > track_A_row.ts_end }).toArray();
+          const igc_glider_type_promise = getDBFirstGliderType();
           Promise.all([
             B1_fixes_promise,
             B2_fixes_promise,
             igc_glider_type_promise,
           ]).then((promisedDB_BRows) => {
-            let B1_fixes = promisedDB_BRows[0];
-            let B2_fixes = promisedDB_BRows[1];
-            let gliderType = promisedDB_BRows[2];
-            let insertTrackB1 = nSQL("tracks")
-              .query("upsert", [
-                {
-                  id: track_B1_id,
-                  dt_start: new Date(track_B_row.ts_start),
-                  ts_start: track_B_row.ts_start,
-                  dt_end: new Date(track_A_row.ts_start - 1),
-                  ts_end: track_A_row.ts_start - 1,
-                  nb_fixes: B1_fixes.length,
-                  name: track_B_row.name + "-B1",
-                  type: track_B_row.type,
-                  gliderType:
-                    track_B_row.type == trackTypes.FLY ? gliderType : "",
-                },
-              ])
-              .exec() as Promise<Track[]>;
-            let insertTrackB2 = nSQL("tracks")
-              .query("upsert", [
-                {
-                  id: track_B2_id,
-                  dt_start: new Date(track_A_row.ts_end + 1),
-                  ts_start: track_A_row.ts_end + 1,
-                  dt_end: new Date(track_B_row.ts_end),
-                  ts_end: track_B_row.ts_end,
-                  nb_fixes: B2_fixes.length,
-                  name: track_B_row.name + "-B2",
-                  type: track_B_row.type,
-                  gliderType:
-                    track_B_row.type == trackTypes.FLY ? gliderType : "",
-                },
-              ])
-              .exec() as Promise<Track[]>;
-            let nbB1FixesInserted = insertFixesArrayInDB(
+            const B1_fixes = promisedDB_BRows[0];
+            const B2_fixes = promisedDB_BRows[1];
+            const gliderType = promisedDB_BRows[2];
+            const insertTrackB1 = myTrackjoinerDB.tracks.add({
+              id: track_B1_id.toString(CryptoJS.enc.Hex),
+              dt_start: new Date(track_B_row.ts_start),
+              ts_start: track_B_row.ts_start,
+              dt_end: new Date(track_A_row.ts_start - 1),
+              ts_end: track_A_row.ts_start - 1,
+              nb_fixes: B1_fixes.length,
+              name: track_B_row.name + "-B1",
+              type: track_B_row.type,
+              gliderType:
+                track_B_row.type == trackTypes.FLY ? gliderType : "",
+            })
+            const insertTrackB2 = myTrackjoinerDB.tracks.add({
+              id: track_B2_id.toString(CryptoJS.enc.Hex),
+              dt_start: new Date(track_A_row.ts_end + 1),
+              ts_start: track_A_row.ts_end + 1,
+              dt_end: new Date(track_B_row.ts_end),
+              ts_end: track_B_row.ts_end,
+              nb_fixes: B2_fixes.length,
+              name: track_B_row.name + "-B2",
+              type: track_B_row.type,
+              gliderType:
+                track_B_row.type == trackTypes.FLY ? gliderType : "",
+            })
+
+            const nbB1FixesInserted = insertFixesArrayInDB(
               track_B1_id.toString(CryptoJS.enc.Hex),
               B1_fixes
             );
 
-            let nbB2FixesInserted = insertFixesArrayInDB(
+            const nbB2FixesInserted = insertFixesArrayInDB(
               track_B2_id.toString(CryptoJS.enc.Hex),
               B2_fixes
             );
 
-            let fixesDelete = nSQL("fixes")
-              .query("delete")
-              .where(["track_id", "=", track_B_row.id])
-              .exec() as Promise<Fix[]>;
-            let tracksDelete = nSQL("tracks")
-              .query("delete")
-              .where(["id", "=", track_B_row.id])
-              .exec() as Promise<Track[]>;
+            const fixesDelete = myTrackjoinerDB.fixes.where('track_id').equalsIgnoreCase(track_B_row.id).delete();
+            const tracksDelete = myTrackjoinerDB.tracks.delete(track_B_row.id);
+
             Promise.all([
               insertTrackB1,
               insertTrackB2,
@@ -1289,14 +1132,6 @@ let cutOverlapping = function (
               tracksDelete,
             ]).then(
               (
-                value: [
-                  insertTrackB1: Track[],
-                  insertTrackB2: Track[],
-                  nbB1FixesInserted: number,
-                  nbB2FixesInserted: number,
-                  fixesDelete: Fix[],
-                  tracksDelete: Track[]
-                ]
               ) => {
                 resolve(splittedId);
               }
@@ -1318,11 +1153,8 @@ let cutOverlapping = function (
  * @param {string} trackId
  * @returns all fixes for one track as Promise given it id
  */
-let getDBFixesTrackRowAsPromise = function (trackId: string): Promise<Fix[]> {
-  return nSQL("fixes")
-    .query("select")
-    .where(["track_id", "=", trackId])
-    .exec() as Promise<Fix[]>;
+const getDBFixesTrackRowAsPromise = function (trackId: string): Promise<Fix[]> {
+  return myTrackjoinerDB.fixes.where('track_id').equalsIgnoreCase(trackId).toArray() as Promise<Fix[]>;
 };
 
 /**
@@ -1330,39 +1162,29 @@ let getDBFixesTrackRowAsPromise = function (trackId: string): Promise<Fix[]> {
  * @param {string} trackId
  * @returns single track as Promise given it id
  */
-let getDBTrackRowAsPromise = function (trackId: string): Promise<Track[]> {
-  return nSQL("tracks")
-    .query("select")
-    .where(["id", "=", trackId])
-    .exec() as Promise<Track[]>;
+const getDBTrackRowAsPromise = function (trackId: string): Promise<Track[]> {
+  return myTrackjoinerDB.tracks.where('id').equalsIgnoreCase(trackId).toArray() as Promise<Track[]>;
 };
 
 /**
  *
  * @returns first gliderType if any
  */
-let getDBFirstGliderType = function (): Promise<string> {
-  return new Promise<string>(function (resolve, reject) {
-    let promiseSelect = nSQL("tracks")
-      .query("select", ["gliderType"])
-      .where([
-        ["gliderType.length", ">", 0],
-        "AND",
-        ["gliderType", "!=", IGC_GLIDER_TYPE],
-      ])
-      .exec() as Promise<Track[]>;
-
-    promiseSelect.then((tracks: Track[]) => {
-      if (
-        typeof tracks[0] != "undefined" &&
-        typeof tracks[0].gliderType != "undefined" &&
-        tracks[0].gliderType != IGC_GLIDER_TYPE
-      ) {
-        resolve(tracks[0].gliderType);
-      } else {
-        resolve(_DEFAULT_GLIDER_TYPE);
-      }
-    });
+const getDBFirstGliderType = function (): Promise<string> {
+  return new Promise<string>(function (resolve) {
+    myTrackjoinerDB.tracks.where('gliderType')
+      .noneOf([IGC_GLIDER_TYPE])
+      .toArray().then((tracks: Track[]) => {
+        if (
+          typeof tracks[0] != "undefined" &&
+          typeof tracks[0].gliderType != "undefined" &&
+          tracks[0].gliderType != IGC_GLIDER_TYPE
+        ) {
+          resolve(tracks[0].gliderType);
+        } else {
+          resolve(_DEFAULT_GLIDER_TYPE);
+        }
+      });
   });
 };
 
@@ -1371,7 +1193,7 @@ let getDBFirstGliderType = function (): Promise<string> {
  * @param {string} trackId
  * @returns A promise with the first date
  */
-let getDBTrackDTStartAsPromise = function (trackId: string): Promise<Date> {
+const getDBTrackDTStartAsPromise = function (trackId: string): Promise<Date> {
   return getDBTrackRowAsPromise(trackId).then((rows) => {
     return rows[0]["dt_start"];
   });
@@ -1381,29 +1203,20 @@ let getDBTrackDTStartAsPromise = function (trackId: string): Promise<Date> {
  *
  * @returns return all tracks as Promise
  */
-let getDBTracksRowsAsPromise = function (): Promise<Track[]> {
-  return nSQL("tracks")
-    .query("select")
-    .orderBy(["ts_start ASC"])
-    .exec() as Promise<Track[]>;
+const getDBTracksRowsAsPromise = function (): Promise<Track[]> {
+  return myTrackjoinerDB.tracks.orderBy('ts_start').toArray() as Promise<Track[]>;
 };
 
 /**
  *
- * @param {string} trackId
+ * @param trackId
  * @returns all points in a Promise
  */
-let getDBFixesRowsAsPromise = function (trackId?: string): Promise<Fix[]> {
+const getDBFixesRowsAsPromise = function (trackId?: string): Promise<Fix[]> {
   if (typeof trackId == "undefined") {
-    return nSQL("fixes").query("select").orderBy(["dt ASC"]).exec() as Promise<
-      Fix[]
-    >;
+    return myTrackjoinerDB.fixes.orderBy('ts').toArray() as Promise<Fix[]>;
   } else {
-    return nSQL("fixes")
-      .query("select")
-      .where(["track_id", "=", trackId])
-      .orderBy(["dt ASC"])
-      .exec() as Promise<Fix[]>;
+    return myTrackjoinerDB.fixes.where('track_id').equalsIgnoreCase(trackId).sortBy('ts') as Promise<Fix[]>;
   }
 };
 
@@ -1412,8 +1225,8 @@ let getDBFixesRowsAsPromise = function (trackId?: string): Promise<Fix[]> {
  * @param {Date} date
  * @returns a date in IGC format
  */
-let igcDateFormater = function (date: Date): string {
-  let dateTimeFormat = new Intl.DateTimeFormat("en", {
+const igcDateFormater = function (date: Date): string {
+  const dateTimeFormat = new Intl.DateTimeFormat("en", {
     timeZone: "UTC",
     year: "2-digit",
     month: "2-digit",
@@ -1423,7 +1236,7 @@ let igcDateFormater = function (date: Date): string {
     minute: "2-digit",
     second: "2-digit",
   });
-  let [{ value: month }, , { value: day }, , { value: year }] =
+  const [{ value: month }, , { value: day }, , { value: year }] =
     dateTimeFormat.formatToParts(date);
   return `${day}${month}${year}`;
 };
@@ -1433,20 +1246,17 @@ let igcDateFormater = function (date: Date): string {
  * @param {*} date
  * @returns a date in IGC format
  */
-let igcTimeFormater = function (date: Date): string {
-  let dateTimeFormat = new Intl.DateTimeFormat("en", {
+const igcTimeFormater = function (date: Date): string {
+  const dateTimeFormat = new Intl.DateTimeFormat("en", {
     timeZone: "UTC",
     hour: "2-digit",
     hourCycle: "h24",
     minute: "2-digit",
     second: "2-digit",
   });
-  let [{ value: hour }, , { value: minute }, , { value: second }] =
+  const [{ value: hour }, , { value: minute }, , { value: second }] =
     dateTimeFormat.formatToParts(date);
-  if (Number(hour) == 24 || hour == "24") {
-    hour = "00";
-  }
-  return `${hour}${minute}${second}`;
+  return `${hour == "24" ? "00" : hour}${minute}${second}`;
 };
 
 /**
@@ -1454,13 +1264,13 @@ let igcTimeFormater = function (date: Date): string {
  * @param {number} decimalLat
  * @returns a latitude in IGC format
  */
-let igcLatFormater = function (decimalLat: number): string {
-  let hemisphere = decimalLat >= 0 ? "N" : "S";
-  let degrees = Math.floor(Math.abs(decimalLat)).toLocaleString("en-US", {
+const igcLatFormater = function (decimalLat: number): string {
+  const hemisphere = decimalLat >= 0 ? "N" : "S";
+  const degrees = Math.floor(Math.abs(decimalLat)).toLocaleString("en-US", {
     minimumIntegerDigits: 2,
     useGrouping: false,
   });
-  let minutes = Math.round(
+  const minutes = Math.round(
     (Math.abs(decimalLat) - Math.floor(Math.abs(decimalLat))) * 60000
   ).toLocaleString("en-US", { minimumIntegerDigits: 5, useGrouping: false });
   return `${degrees}${minutes}${hemisphere}`;
@@ -1471,13 +1281,13 @@ let igcLatFormater = function (decimalLat: number): string {
  * @param {number} decimalLon
  * @returns a longitude in IGC format
  */
-let igcLonFormater = function (decimalLon: number): string {
-  let eastern = decimalLon >= 0 ? "E" : "W";
-  let degrees = Math.floor(Math.abs(decimalLon)).toLocaleString("en-US", {
+const igcLonFormater = function (decimalLon: number): string {
+  const eastern = decimalLon >= 0 ? "E" : "W";
+  const degrees = Math.floor(Math.abs(decimalLon)).toLocaleString("en-US", {
     minimumIntegerDigits: 3,
     useGrouping: false,
   });
-  let minutes = Math.round(
+  const minutes = Math.round(
     (Math.abs(decimalLon) - Math.floor(Math.abs(decimalLon))) * 60000
   ).toLocaleString("en-US", { minimumIntegerDigits: 5, useGrouping: false });
   return `${degrees}${minutes}${eastern}`;
@@ -1488,7 +1298,7 @@ let igcLonFormater = function (decimalLon: number): string {
  * @param {number} altitude
  * @returns an altitude converted to IGC format
  */
-let igcAltitudeFormater = function (altitude: number): string {
+const igcAltitudeFormater = function (altitude: number): string {
   if (altitude >= 0) {
     return `${Math.round(altitude).toLocaleString("en-US", {
       minimumIntegerDigits: 5,
@@ -1507,10 +1317,10 @@ let igcAltitudeFormater = function (altitude: number): string {
  * @param trackId 
  * @returns a Promise with a string containing the IGC file of a trackId
  */
-let getTrackASIgcString = function (trackId?: string): Promise<string> {
+const getTrackASIgcString = function (trackId?: string): Promise<string> {
   return new Promise(function (resolve) {
     getDBFixesRowsAsPromise(trackId).then((value) => {
-      let igc_string = igcProducer(value);
+      const igc_string = igcProducer(value);
       resolve(igc_string);
     });
   });
@@ -1521,7 +1331,7 @@ let getTrackASIgcString = function (trackId?: string): Promise<string> {
  * @param fixes 
  * @returns a valid GPX file as a string
  */
-let gpxProducer = function (fixes: Fix[]): string {
+const gpxProducer = function (fixes: Fix[]): string {
   let result =
     '<?xml version="1.0" encoding="UTF-8"?>\n<gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd" version="1.1" creator="CFDTrackjoiner">';
   result += `<metadata/><trk><name></name><desc></desc><trkseg>`;
@@ -1548,10 +1358,10 @@ let gpxProducer = function (fixes: Fix[]): string {
  * @param trackId 
  * @returns a Promise with a string containing the GPX file of a trackId
  */
-let getTrackASGpxString = function (trackId?: string): Promise<string> {
+const getTrackASGpxString = function (trackId?: string): Promise<string> {
   return new Promise(function (resolve) {
     getDBFixesRowsAsPromise(trackId).then((value) => {
-      let gpx_string = gpxProducer(value);
+      const gpx_string = gpxProducer(value);
       resolve(gpx_string);
     });
   });
@@ -1563,7 +1373,7 @@ let getTrackASGpxString = function (trackId?: string): Promise<string> {
  * @param {*} date
  * @returns minimal headers for a valid IGC File
  */
-let igcHeaders = function (date: Date): string {
+const igcHeaders = function (date: Date): string {
   return `AXCF034 French CFDMV pre-alpha track fusion\r\nHFDTE${igcDateFormater(
     date
   )}\r\nHFPLTPILOTINCHARGE:CFDMV\r\nHFCM2CREW2:NIL\r\nHFGTYGLIDERTYPE:${igc_glider_type}\r\nHFGIDGLIDERID:\r\nHFDTMGPSDATUM:WGS84\r\nHFRFWFIRMWAREVERSION:0\r\nHFRHWHARDWAREVERSION:\r\nHFFTYFRTYPE:TrackJoiner\r\nHFGPSRECEIVER:NIL\r\nHFPRSPRESSALTSENSOR:\r\n`;
@@ -1575,12 +1385,12 @@ let igcHeaders = function (date: Date): string {
  * @param {boolean} isStart
  * @returns {string} an IGC comment
  */
-let igcTypeCommentFormater = function (
+const igcTypeCommentFormater = function (
   type: trackTypes,
   isStart: boolean
 ): string {
-  let longType = type == "H" ? "HIKE" : "FLY";
-  let longIsStart = isStart ? "START" : "END";
+  const longType = type == "H" ? "HIKE" : "FLY";
+  const longIsStart = isStart ? "START" : "END";
   return `LPLT${longType}${longIsStart}\r\n`;
 };
 
@@ -1589,17 +1399,17 @@ let igcTypeCommentFormater = function (
  * @param {*} row
  * @returns minimal IGC record formater
  */
-let igcBRecordFormater = function (row: Fix): string {
-  let dt = new Date(row.dt);
+const igcBRecordFormater = function (row: Fix): string {
+  const dt = new Date(row.dt);
   if (isNaN(row.point.lat) || isNaN(row.point.lon)) {
     return "";
   }
-  let igc_lat = igcLatFormater(row.point.lat);
-  let igc_lon = igcLonFormater(row.point.lon);
-  let igc_pressureAltitude = igcAltitudeFormater(
+  const igc_lat = igcLatFormater(row.point.lat);
+  const igc_lon = igcLonFormater(row.point.lon);
+  const igc_pressureAltitude = igcAltitudeFormater(
     isNaN(row.preciseAltitude) ? 0 : row.preciseAltitude
   );
-  let igc_gpsAltitude = igcAltitudeFormater(
+  const igc_gpsAltitude = igcAltitudeFormater(
     isNaN(row.gpsAltitude) ? 0 : row.gpsAltitude
   );
   return `B${igcTimeFormater(
@@ -1612,7 +1422,7 @@ let igcBRecordFormater = function (row: Fix): string {
  * @param {*} rows
  * @returns
  */
-let igcProducer = function (rows: Fix[]): string {
+const igcProducer = function (rows: Fix[]): string {
   let szReturn = "";
   if (rows.length) {
     szReturn += igcHeaders(new Date(rows[0].dt));
@@ -1639,7 +1449,7 @@ let igcProducer = function (rows: Fix[]): string {
  * @param {*} tracks
  * @returns true if there is an overlap
  */
-let isAnOverlapDetected = function (tracks: Track[]): boolean {
+const isAnOverlapDetected = function (tracks: Track[]): boolean {
   for (let i = 1; i < tracks.length; i++) {
     if (tracks[i - 1].ts_end > tracks[i].ts_start) {
       return true;
@@ -1653,8 +1463,8 @@ let isAnOverlapDetected = function (tracks: Track[]): boolean {
  * @param {*} tracks
  * @returns get an array of the overlapped rows id
  */
-let getOverlappedRowsID = function (tracks: Track[]): string[] {
-  let retArray: string[] = [];
+const getOverlappedRowsID = function (tracks: Track[]): string[] {
+  const retArray: string[] = [];
   for (let i = 1; i < tracks.length; i++) {
     if (tracks[i - 1].ts_end > tracks[i].ts_start) {
       retArray.push(tracks[i].id);
@@ -1670,7 +1480,7 @@ let getOverlappedRowsID = function (tracks: Track[]): string[] {
  * @param {string} trackId
  * @returns
  */
-let integrateInPreviousTrack = function (trackId: string): Promise<string[]> {
+const integrateInPreviousTrack = function (trackId: string): Promise<string[]> {
   return new Promise(function (resolve, reject) {
     getDBTracksRowsAsPromise().then((promisedRows) => {
       let previousRowId = "";
@@ -1694,7 +1504,7 @@ let integrateInPreviousTrack = function (trackId: string): Promise<string[]> {
 /**
  * showDB the DB in console
  */
-let showDB = function (): void {
+const showDB = function (): void {
   getDBTracksRowsAsPromise()
     .then((rows) => {
       // selected rows
