@@ -359,10 +359,14 @@
         <i class="fas fa-download"></i>&nbsp;Télécharger
       </a>
     </div>
-    <div class="flex-col divide-y divide-dashed">
-      <div v-if="state.fixErroneusDTPicker !== null">
+    <div class="flex-col divide-y divide-dashed" v-if="state.toolbox && (state.fixErroneusDTPicker !== null)">
+      <div>
+        <p class="text-sm text-gray-700">&nbsp;</p>
+      </div>
+      <div class="flex items-center">
+        <p class="text-sm text-gray-700">Correction de l'enregistrement de départ</p>
         <datepicker locale="fr" inputClassName="text-sm text-gray-900" v-model="state.fixErroneusDTPicker" enableSeconds
-          autoApply /><br />
+          autoApply :clearable="false" /><br />
         <button v-if="state.selected_row_original_date != state.fixErroneusDTPicker" @click="clickfixErroneusDT" class="
           inline-flex
           items-center
@@ -395,8 +399,82 @@
           Corriger
         </button>
       </div>
-      <div id="changePartOfTrackType">
-        bb
+      <div class="flex items-center">
+        <p class="text-sm text-gray-700">Division de l'enregistrement</p>
+        <datepicker locale="fr" inputClassName="text-sm text-gray-900" v-model="state.splitDTPicker" enableSeconds
+          :min-date="state.splitDTPicker_start" :max-date="state.splitDTPicker_end" autoApply :clearable="false"
+          @update:modelValue="state.splitDTPicker_changed = true" />
+        <br />
+        <button
+          v-if="state.splitDTPicker_changed && state.splitDTPicker != null && state.splitDTPicker > state.splitDTPicker_start && state.splitDTPicker < state.splitDTPicker_end"
+          @click="clickSplit" class="
+          inline-flex
+          items-center
+          font-semibold
+          leading-6
+          text-sm
+          shadow
+          rounded-md
+          text-white
+          bg-blue-500
+          hover:bg-blue-700
+          transition
+          ease-in-out
+          duration-150
+          py-2
+          px-4
+          m-2
+        " :disabled="state.isLoading || state.overlapped_rows.length > 0" :class="
+          state.overlapped_rows.length
+            ? 'bg-slate-200 hover:bg-slate-200 stat'
+            : ''
+        ">
+          <svg v-if="state.isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+            </path>
+          </svg>
+          Diviser
+        </button>
+      </div>
+      <div class="flex items-center">
+        <p class="text-sm text-gray-700">Changement de type</p>
+        <select @change="state.changedType = true" v-model="state.selected_row_type">
+          <option v-for="type in trackTypes" :key="type" :selected="type === state.selected_row_type">{{ type }}</option>
+        </select>
+        <button v-if="state.changedType" @click="clickChangeType" class="
+          inline-flex
+          items-center
+          font-semibold
+          leading-6
+          text-sm
+          shadow
+          rounded-md
+          text-white
+          bg-blue-500
+          hover:bg-blue-700
+          transition
+          ease-in-out
+          duration-150
+          py-2
+          px-4
+          m-2
+        " :disabled="state.isLoading || state.overlapped_rows.length > 0" :class="
+          state.overlapped_rows.length
+            ? 'bg-slate-200 hover:bg-slate-200 stat'
+            : ''
+        ">
+          <svg v-if="state.isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+            </path>
+          </svg>
+          Changer le type
+        </button>
       </div>
     </div>
   </div>
@@ -406,33 +484,43 @@
 import { reactive, ref, defineComponent } from "vue";
 import {
   initDB,
+  changePartOfTrackType,
+  changeTrackType,
   fixErroneousDT,
   getDBTracksRowsAsPromise,
   getTrackASIgcString,
   getTrackASGpxString,
+  getDBTrackTypeAsPromise,
+  getDBTrackDTEndAsPromise,
   getDBTrackDTStartAsPromise,
   getOverlappedRowsID,
   integrateInPreviousTrack,
-  trackTypes,
   fileTypes,
   openFileAsPromise,
   showDB,
 
 } from "trackjoiner";
-import type { Track, } from "trackjoiner";
+import { Track, trackTypes } from "trackjoiner";
 import TrackJoinerHelp from "./trackJoinerHelp.vue";
 import Commit from "../../commit.json";
 import Datepicker from '@vuepic/vue-datepicker';
-import '@vuepic/vue-datepicker/dist/main.css';
+//import '@vuepic/vue-datepicker/dist/main.css';
 
 interface ReactiveData {
   rows: Track[];
   overlapped_rows: string[];
   isLoading: boolean;
   downloadLink: string;
+  toolbox: boolean;
   selected_row: string;
   selected_row_original_date: Date;
   fixErroneusDTPicker: Date;
+  splitDTPicker_start: Date;
+  splitDTPicker: Date;
+  splitDTPicker_end: Date;
+  splitDTPicker_changed: boolean;
+  changedType: boolean;
+  selected_row_type: trackTypes;
 }
 export default defineComponent({
   setup() {
@@ -441,9 +529,16 @@ export default defineComponent({
       overlapped_rows: [] as string[],
       isLoading: false,
       downloadLink: "",
+      toolbox: false,
       selected_row: "",
       selected_row_original_date: null as Date,
       fixErroneusDTPicker: null as Date,
+      splitDTPicker_start: null as Date,
+      splitDTPicker: null as Date,
+      splitDTPicker_end: null as Date,
+      splitDTPicker_changed: false,
+      changedType: false,
+      selected_row_type: trackTypes.MIXED,
     });
     const isHashVisible = ref(false);
     return {
@@ -469,14 +564,29 @@ export default defineComponent({
         });
       });
     },
+    clickChangeType() {
+      if ((this.state as ReactiveData).changedType) {
+        changeTrackType((this.state as ReactiveData).selected_row, (this.state as ReactiveData).selected_row_type)
+          .then((value) => {
+            this.updateRows();
+          });
+      }
+    },
+    clickSplit() {
+      if (this.state.selected_row !== "" && this.state.splitDTPicker != null && this.state.splitDTPicker > this.state.splitDTPicker_start && this.state.splitDTPicker < this.state.splitDTPicker_end) {
+        changePartOfTrackType((this.state as ReactiveData).selected_row, this.state.splitDTPicker_start, this.state.splitDTPicker, trackTypes.FLY).then((value) => {
+          this.updateRows();
+        })
+      }
+    },
     clickfixErroneusDT() {
       if (this.state.selected_row !== "" && this.state.fixErroneusDTPicker !== null) {
         (this.state as ReactiveData).isLoading = true;
-        fixErroneousDT((this.state as ReactiveData).selected_row, (this.state as ReactiveData).fixErroneusDTPicker).then((value)=>{
-          console.log(value);
-          this.updateRows();
-        });
-       // this.updateRows();
+        fixErroneousDT((this.state as ReactiveData).selected_row,
+          (this.state as ReactiveData).fixErroneusDTPicker)
+          .then((value) => {
+            this.updateRows();
+          });
       }
     },
     updateRows() {
@@ -487,11 +597,25 @@ export default defineComponent({
     },
     clickLine(id: string) {
       (this.state as ReactiveData).selected_row = id;
-      
-      getDBTrackDTStartAsPromise(id).then(value => {
-        (this.state as ReactiveData).fixErroneusDTPicker = value;
-        (this.state as ReactiveData).selected_row_original_date = value;
-      })
+      if (window.location.hash) {
+        if (window.location.hash === "#toolbox") {
+          (this.state as ReactiveData).toolbox = true;
+          (this.state as ReactiveData).changedType = false;
+          getDBTrackTypeAsPromise(id).then(value => {
+            (this.state as ReactiveData).selected_row_type = value;
+          });
+          getDBTrackDTStartAsPromise(id).then(value => {
+            (this.state as ReactiveData).fixErroneusDTPicker = value;
+            (this.state as ReactiveData).selected_row_original_date = value;
+            (this.state as ReactiveData).splitDTPicker_start = value;
+            getDBTrackDTEndAsPromise(id).then(value => {
+              (this.state as ReactiveData).splitDTPicker_end = value;
+              (this.state as ReactiveData).splitDTPicker = new Date(((this.state as ReactiveData).splitDTPicker_end.getTime() + (this.state as ReactiveData).splitDTPicker_start.getTime()) / 2);
+            })
+          })
+        }
+      }
+
     },
     clickJoin() {
       (this.state as ReactiveData).isLoading = true;
@@ -588,6 +712,11 @@ export default defineComponent({
     },
   },
   mounted() {
+    if (window.location.hash) {
+      if (window.location.hash === "#toolbox") {
+        (this.state as ReactiveData).toolbox = true;
+      }
+    }
     (this.state as ReactiveData).isLoading = true;
     initDB();
     (this.state as ReactiveData).isLoading = false;
@@ -623,5 +752,14 @@ export default defineComponent({
   100% {
     transform: rotate(360deg);
   }
+}
+</style>
+<style lang="scss">
+$dp__font_size: 0.875rem;
+@import '@vuepic/vue-datepicker/src/VueDatePicker/style/main.scss';
+
+.dp__input {
+  @extend .dp__input;
+  border-width: 0px;
 }
 </style>

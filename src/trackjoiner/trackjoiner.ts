@@ -812,39 +812,47 @@ const addTimestampToDateObject = function (ts: number, dateObject: Date): Date {
  * @param {string} trackId
  * @param {*} realDTStart
  */
-const fixErroneousDT = function (trackId: string, realDTStart: Date):Promise<number[]> {
-  let tracksPromise: Promise<number> = null;
-  const fixesPromise: Promise<number>[] = [];
-  getDBTrackRowAsPromise(trackId).then((track) => {
-    const Δt = realDTStart.getTime() - new Date(track[0].dt_start).getTime();
-    tracksPromise = myTrackjoinerDB.tracks.update(trackId, {
-      dt_start: addTimestampToDateObject(
-        Δt,
-        new Date(track[0].dt_start)
-      ),
-      ts_start: track[0].ts_start + Δt,
-      dt_end: addTimestampToDateObject(
-        Δt,
-        new Date(track[0].dt_end)
-      ),
-      ts_end: track[0].ts_end + Δt,
-    });
+const fixErroneousDT = function (trackId: string, realDTStart: Date): Promise<number> {
 
-    getDBFixesTrackRowAsPromise(trackId).then((fixes) => {
-      for (let i = 0; i < fixes.length; i++) {
-        fixesPromise.push(
-          myTrackjoinerDB.fixes.update(fixes[i], {
-            dt: addTimestampToDateObject(
+  return new Promise<number>((resolve) => {
+    getDBTrackRowAsPromise(trackId).then((track) => {
+      const Δt = realDTStart.getTime() - new Date(track[0].dt_start).getTime();
+      myTrackjoinerDB.tracks.update(trackId, {
+        dt_start: addTimestampToDateObject(
+          Δt,
+          new Date(track[0].dt_start)
+        ),
+        ts_start: track[0].ts_start + Δt,
+        dt_end: addTimestampToDateObject(
+          Δt,
+          new Date(track[0].dt_end)
+        ),
+        ts_end: track[0].ts_end + Δt,
+      }).then(() => {
+        getDBFixesTrackRowAsPromise(trackId).then((fixes) => {
+          const bulkMods: Fix[] = [];
+          for (let i = 0; i < fixes.length; i++) {
+            const nDate = addTimestampToDateObject(
               Δt,
               new Date(fixes[i].dt)
-            )
-          })
-        );
-      }
+            );
+            const cFix: Fix = {
+              id: fixes[i].id,
+              track_id: fixes[i].track_id,
+              point: fixes[i].point,
+              preciseAltitude: fixes[i].preciseAltitude,
+              gpsAltitude: fixes[i].gpsAltitude,
+              dt: nDate,
+              ts: nDate.getTime(),
+              type: fixes[i].type
+            }
+            bulkMods.push(cFix);
+          }
+          resolve(myTrackjoinerDB.fixes.bulkPut(bulkMods));
+        });
+      });
     });
-  });
-  const promised = [tracksPromise, ...fixesPromise]
-  return Promise.all(promised);
+  })
 };
 
 /**
@@ -1254,6 +1262,28 @@ const getDBTrackDTStartAsPromise = function (trackId: string): Promise<Date> {
 
 /**
  *
+ * @param {string} trackId
+ * @returns A promise with the end date
+ */
+ const getDBTrackDTEndAsPromise = function (trackId: string): Promise<Date> {
+  return getDBTrackRowAsPromise(trackId).then((rows) => {
+    return rows[0].dt_end;
+  });
+};
+
+/**
+ *
+ * @param {string} trackId
+ * @returns A promise with the type
+ */
+ const getDBTrackTypeAsPromise = function (trackId: string): Promise<trackTypes> {
+  return getDBTrackRowAsPromise(trackId).then((rows) => {
+    return rows[0].type;
+  });
+};
+
+/**
+ *
  * @returns return all tracks as Promise
  */
 const getDBTracksRowsAsPromise = function (): Promise<Track[]> {
@@ -1384,7 +1414,7 @@ const getTrackASIgcString = function (trackId?: string): Promise<string> {
  * @param trackType 
  * @returns the Strava equivalent type
  */
-const getStravaGpxTypeFromTrackType = function(trackType: trackTypes): StravaType{
+const getStravaGpxTypeFromTrackType = function (trackType: trackTypes): StravaType {
   switch (trackType) {
     case trackTypes.FLY:
       return StravaType.Paragliding;
@@ -1406,7 +1436,7 @@ const getStravaGpxTypeFromTrackType = function(trackType: trackTypes): StravaTyp
  * @param trackType 
  * @returns the gpx track header
  */
-const gpxProducerTrackHeader = function (trackName: string, trackType:trackTypes):string{
+const gpxProducerTrackHeader = function (trackName: string, trackType: trackTypes): string {
   return `<trk><name>${trackName}</name><type>${getStravaGpxTypeFromTrackType(trackType) as number}</type><desc></desc><trkseg>`;
 }
 
@@ -1424,22 +1454,22 @@ const gpxProducer = function (fixes: Fix[]): string {
   for (let i = 0; i < fixes.length; i++) { //strange but for loop is faster than Array.reduce()
     if (i == 0) {
       lastType = fixes[i].type;
-      result += gpxProducerTrackHeader(fixes[i].track_id,lastType);
+      result += gpxProducerTrackHeader(fixes[i].track_id, lastType);
     }
-    if (lastType != fixes[i].type){
+    if (lastType != fixes[i].type) {
       result += `</trkseg></trk>`;
       lastType = fixes[i].type;
-      result += gpxProducerTrackHeader(fixes[i].track_id,lastType);
+      result += gpxProducerTrackHeader(fixes[i].track_id, lastType);
     }
     if (fixes[i].point.lat !== undefined && fixes[i].point.lon !== undefined) {
       result += `<trkpt lat="${fixes[i].point.lat}" lon="${fixes[i].point.lon}">`;
       result +=
-      fixes[i].gpsAltitude !== undefined ? `<ele>${fixes[i].gpsAltitude}</ele>` : "";
-        result +=
+        fixes[i].gpsAltitude !== undefined ? `<ele>${fixes[i].gpsAltitude}</ele>` : "";
+      result +=
         fixes[i].dt !== undefined
           ? `<time>${new Date(fixes[i].dt).toISOString()}</time>`
           : "";
-          result += `</trkpt>`;
+      result += `</trkpt>`;
     }
   }
   result += `</trkseg></trk></gpx>`;
@@ -1635,8 +1665,10 @@ export {
   fixErroneousDT,
   getDBFirstGliderType,
   getDBFixesRowsAsPromise,
+  getDBTrackDTEndAsPromise,
   getDBTrackDTStartAsPromise,
   getDBTracksRowsAsPromise,
+  getDBTrackTypeAsPromise,
   getFileExtension,
   getFileName,
   getOverlappedRowsID,
