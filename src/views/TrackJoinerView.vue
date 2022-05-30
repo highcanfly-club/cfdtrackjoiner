@@ -567,14 +567,17 @@ export default defineComponent({
     clickChangeType() {
       if ((this.state as ReactiveData).changedType) {
         changeTrackType((this.state as ReactiveData).selected_row, (this.state as ReactiveData).selected_row_type)
-          .then((value) => {
+          .then(() => {
             this.updateRows();
           });
       }
     },
     clickSplit() {
       if (this.state.selected_row !== "" && this.state.splitDTPicker != null && this.state.splitDTPicker > this.state.splitDTPicker_start && this.state.splitDTPicker < this.state.splitDTPicker_end) {
-        changePartOfTrackType((this.state as ReactiveData).selected_row, this.state.splitDTPicker_start, this.state.splitDTPicker, trackTypes.FLY).then((value) => {
+        changePartOfTrackType((this.state as ReactiveData).selected_row, 
+        this.state.splitDTPicker_start,
+         this.state.splitDTPicker, 
+         trackTypes.FLY).then(() => {
           this.updateRows();
         })
       }
@@ -584,7 +587,7 @@ export default defineComponent({
         (this.state as ReactiveData).isLoading = true;
         fixErroneousDT((this.state as ReactiveData).selected_row,
           (this.state as ReactiveData).fixErroneusDTPicker)
-          .then((value) => {
+          .then(() => {
             this.updateRows();
           });
       }
