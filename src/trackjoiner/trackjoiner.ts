@@ -812,7 +812,7 @@ const addTimestampToDateObject = function (ts: number, dateObject: Date): Date {
  * @param {string} trackId
  * @param {*} realDTStart
  */
-const fixErroneousDT = function (trackId: string, realDTStart: Date) {
+const fixErroneousDT = function (trackId: string, realDTStart: Date):Promise<number[]> {
   let tracksPromise: Promise<number> = null;
   const fixesPromise: Promise<number>[] = [];
   getDBTrackRowAsPromise(trackId).then((track) => {
@@ -843,7 +843,8 @@ const fixErroneousDT = function (trackId: string, realDTStart: Date) {
       }
     });
   });
-  Promise.all([tracksPromise, ...fixesPromise]);
+  const promised = [tracksPromise, ...fixesPromise]
+  return Promise.all(promised);
 };
 
 /**

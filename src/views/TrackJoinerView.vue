@@ -1,7 +1,6 @@
 <template>
   <div v-if="state.isLoading" class="loading">
-    <div
-      class="
+    <div class="
         fixed
         top-0
         left-0
@@ -16,10 +15,8 @@
         flex flex-col
         items-center
         justify-center
-      "
-    >
-      <div
-        class="
+      ">
+      <div class="
           loader
           ease-linear
           rounded-full
@@ -27,37 +24,24 @@
           h-12
           w-12
           mb-4
-        "
-      ></div>
+        "></div>
       <h2 class="text-center text-white text-xl font-semibold">
         Assemblage...
       </h2>
       <p class="w-1/3 text-center text-white">Nous analysons les données…</p>
-      <Transition
-        appear
-        name="appears3s"
+      <Transition appear name="appears3s"
         enter-active-class="transition-opacity duration-[3s] ease-[cubic-bezier(1,0,1,-0.5)]"
-        enter-from-class="opacity-0"
-        leave-to-class="opacity-0"
-      >
+        enter-from-class="opacity-0" leave-to-class="opacity-0">
         <p class="w-1/3 text-center text-white">Soyez patients…</p>
       </Transition>
-      <Transition
-        appear
-        name="appears6s"
+      <Transition appear name="appears6s"
         enter-active-class="transition-opacity duration-[6s] ease-[cubic-bezier(1,0,1,-0.5)]"
-        enter-from-class="opacity-0"
-        leave-to-class="opacity-0"
-      >
+        enter-from-class="opacity-0" leave-to-class="opacity-0">
         <p class="w-1/3 text-center text-white">Ça avance…</p>
       </Transition>
-      <Transition
-        appear
-        name="appears9s"
+      <Transition appear name="appears9s"
         enter-active-class="transition-opacity duration-[9s] ease-[cubic-bezier(1,0,1,-0.5)]"
-        enter-from-class="opacity-0"
-        leave-to-class="opacity-0"
-      >
+        enter-from-class="opacity-0" leave-to-class="opacity-0">
         <p class="w-1/3 text-center text-white">C'est bientôt prêt…</p>
       </Transition>
     </div>
@@ -66,20 +50,16 @@
     <div class="flex flex-col">
       <div class="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
         <div class="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-          <div
-            class="
+          <div class="
               shadow
               overflow-hidden
               border-b border-gray-200
               sm:rounded-lg
-            "
-          >
+            ">
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
                 <tr>
-                  <th
-                    scope="col"
-                    class="
+                  <th scope="col" class="
                       px-6
                       py-3
                       text-left text-xs
@@ -87,13 +67,10 @@
                       text-gray-500
                       uppercase
                       tracking-wider
-                    "
-                  >
+                    ">
                     Section
                   </th>
-                  <th
-                    scope="col"
-                    class="
+                  <th scope="col" class="
                       px-6
                       py-3
                       text-left text-xs
@@ -101,13 +78,10 @@
                       text-gray-500
                       uppercase
                       tracking-wider
-                    "
-                  >
+                    ">
                     Heure
                   </th>
-                  <th
-                    scope="col"
-                    class="
+                  <th scope="col" class="
                       px-6
                       py-3
                       text-left text-xs
@@ -115,13 +89,10 @@
                       text-gray-500
                       uppercase
                       tracking-wider
-                    "
-                  >
+                    ">
                     État
                   </th>
-                  <th
-                    scope="col"
-                    class="
+                  <th scope="col" class="
                       px-6
                       py-3
                       text-left text-xs
@@ -129,13 +100,10 @@
                       text-gray-500
                       uppercase
                       tracking-wider
-                    "
-                  >
+                    ">
                     Points
                   </th>
-                  <th
-                    scope="col"
-                    class="
+                  <th scope="col" class="
                       px-6
                       py-3
                       text-left text-xs
@@ -143,14 +111,10 @@
                       text-gray-500
                       uppercase
                       tracking-wider
-                    "
-                  >
+                    ">
                     Fichier
                   </th>
-                  <th
-                    @click="isHashVisible = !isHashVisible"
-                    scope="col"
-                    class="
+                  <th @click="isHashVisible = !isHashVisible" scope="col" class="
                       px-6
                       py-3
                       text-left text-xs
@@ -158,14 +122,10 @@
                       text-gray-500
                       uppercase
                       tracking-wider
-                    "
-                  >
+                    ">
                     {{ isHashVisible ? "Masquer le hash" : "&nbsp;" }}
                   </th>
-                  <th
-                    @click="isHashVisible = !isHashVisible"
-                    scope="col"
-                    class="
+                  <th @click="isHashVisible = !isHashVisible" scope="col" class="
                       relative
                       px-6
                       py-3
@@ -174,24 +134,22 @@
                       text-gray-500
                       uppercase
                       tracking-wider
-                    "
-                  >
+                    ">
                     {{ isHashVisible ? "&nbsp;" : "Voir le hash" }}
                   </th>
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-gray-200">
-                <tr v-for="(row, index) in state.rows" :key="row.id">
+                <tr v-for="(row, index) in state.rows" :key="row.id" @click="clickLine(row.id)" ref="track"
+                  :class="state.selected_row === row.id ? 'bg-blue-50' : 'bg-white'">
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="flex items-center">
                       <div class="flex-shrink-0 h-10 w-10">
-                        <i
-                          :class="
-                            row.type == trackTypes.FLY
-                              ? 'fas fa-plane-departure'
-                              : 'fas fa-hiking'
-                          "
-                        />
+                        <i :class="
+                          row.type == trackTypes.FLY
+                            ? 'fas fa-plane-departure'
+                            : 'fas fa-hiking'
+                        " />
                       </div>
                       <div class="ml-4">
                         <div class="text-sm font-medium text-gray-900">
@@ -203,32 +161,31 @@
                   <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm text-gray-900">
                       {{
-                        new Intl.DateTimeFormat("fr-FR", {
-                          year: "2-digit",
-                          month: "short",
-                          day: "2-digit",
-                          hour: "numeric",
-                          minute: "numeric",
-                          second: "numeric",
-                        }).format(new Date(row.dt_start))
+                          new Intl.DateTimeFormat("fr-FR", {
+                            year: "2-digit",
+                            month: "short",
+                            day: "2-digit",
+                            hour: "numeric",
+                            minute: "numeric",
+                            second: "numeric",
+                          }).format(new Date(row.dt_start))
                       }}
                     </div>
                     <div class="text-sm text-gray-500">
                       {{
-                        new Intl.DateTimeFormat("fr-FR", {
-                          year: "2-digit",
-                          month: "short",
-                          day: "2-digit",
-                          hour: "numeric",
-                          minute: "numeric",
-                          second: "numeric",
-                        }).format(new Date(row.dt_end))
+                          new Intl.DateTimeFormat("fr-FR", {
+                            year: "2-digit",
+                            month: "short",
+                            day: "2-digit",
+                            hour: "numeric",
+                            minute: "numeric",
+                            second: "numeric",
+                          }).format(new Date(row.dt_end))
                       }}
                     </div>
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap">
-                    <span
-                      class="
+                    <span class="
                         px-2
                         inline-flex
                         text-xs
@@ -236,18 +193,15 @@
                         font-semibold
                         rounded-full
                         text-green-800
-                      "
-                      :class="
+                      " :class="
                         isOverlapped(row, state.overlapped_rows)
                           ? 'bg-red-100 cursor-pointer'
                           : 'bg-green-100'
-                      "
-                      @click="resolveOverlap(row)"
-                    >
+                      " @click="resolveOverlap(row)">
                       {{
-                        isOverlapped(row, state.overlapped_rows)
-                          ? "Chevauchement"
-                          : "Valide"
+                          isOverlapped(row, state.overlapped_rows)
+                            ? "Chevauchement"
+                            : "Valide"
                       }}
                     </span>
                   </td>
@@ -260,35 +214,24 @@
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     <div v-if="isHashVisible">{{ row.id }}</div>
                   </td>
-                  <td
-                    class="
+                  <td class="
                       px-6
                       py-4
                       whitespace-nowrap
                       text-right text-sm
                       font-medium
-                    "
-                  >
-                    <span
-                      class="
+                    ">
+                    <span class="
                         flex flex-nowrap
                         cursor-pointer
                         text-blue-600
                         hover:text-indigo-900
-                      "
-                      ><img
-                        @click.once="
-                          clickDownload(row.id, $event, fileTypes.IGC)
-                        "
-                        class="w-6"
-                        :src="require('../assets/IGC.svg')" />&nbsp;
-                      <img
-                        @click.once="
-                          clickDownload(row.id, $event, fileTypes.GPX)
-                        "
-                        class="w-6"
-                        :src="require('../assets/GPX.svg')"
-                    /></span>
+                      "><img @click.once="
+                        clickDownload(row.id, $event, fileTypes.IGC)
+                      " class="w-6" :src="require('../assets/IGC.svg')" />&nbsp;
+                      <img @click.once="
+                        clickDownload(row.id, $event, fileTypes.GPX)
+                      " class="w-6" :src="require('../assets/GPX.svg')" /></span>
                   </td>
                 </tr>
               </tbody>
@@ -298,9 +241,7 @@
       </div>
     </div>
     <div class="flex justify-center">
-      <button
-        type="button"
-        class="
+      <button type="button" class="
           inline-flex
           items-center
           font-semibold
@@ -317,44 +258,19 @@
           py-2
           px-4
           m-2
-        "
-        @click="clickButton($refs.fileFly)"
-        :disabled="state.isLoading"
-      >
-        <svg
-          v-if="state.isLoading"
-          class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-          ></circle>
-          <path
-            class="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          ></path>
+        " @click="clickButton($refs.fileFly as HTMLElement)" :disabled="state.isLoading">
+        <svg v-if="state.isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+          xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+          </path>
         </svg>
         Vols
       </button>
-      <input
-        type="file"
-        accept=".igc,.fit,.gpx"
-        multiple
-        ref="fileFly"
-        style="display: none"
-        @change="clickFile($event, trackTypes.FLY)"
-      />
-      <button
-        type="button"
-        class="
+      <input type="file" accept=".igc,.fit,.gpx" multiple ref="fileFly" style="display: none"
+        @change="clickFile($event, trackTypes.FLY)" />
+      <button type="button" class="
           inline-flex
           items-center
           font-semibold
@@ -371,44 +287,19 @@
           py-2
           px-4
           m-2
-        "
-        @click="clickButton($refs.fileHike)"
-        :disabled="state.isLoading"
-      >
-        <svg
-          v-if="state.isLoading"
-          class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-          ></circle>
-          <path
-            class="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          ></path>
+        " @click="clickButton($refs.fileHike as HTMLElement)" :disabled="state.isLoading">
+        <svg v-if="state.isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+          xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+          </path>
         </svg>
         Marches
       </button>
-      <input
-        type="file"
-        accept=".igc,.fit,.gpx"
-        multiple
-        ref="fileHike"
-        style="display: none"
-        @change="clickFile($event, trackTypes.HIKE)"
-      />
-      <button
-        @click="clickJoin"
-        class="
+      <input type="file" accept=".igc,.fit,.gpx" multiple ref="fileHike" style="display: none"
+        @change="clickFile($event, trackTypes.HIKE)" />
+      <button @click="clickJoin" class="
           inline-flex
           items-center
           font-semibold
@@ -425,40 +316,21 @@
           py-2
           px-4
           m-2
-        "
-        :disabled="state.isLoading || state.overlapped_rows.length > 0"
-        :class="
+        " :disabled="state.isLoading || state.overlapped_rows.length > 0" :class="
           state.overlapped_rows.length
             ? 'bg-slate-200 hover:bg-slate-200 stat'
             : ''
-        "
-      >
-        <svg
-          v-if="state.isLoading"
-          class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-          ></circle>
-          <path
-            class="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          ></path>
+        ">
+        <svg v-if="state.isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+          xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+          </path>
         </svg>
         Joindre
       </button>
-      <a
-        v-if="state.downloadLink.length"
-        class="
+      <a v-if="state.downloadLink.length" class="
           inline-flex
           items-center
           font-semibold
@@ -475,35 +347,57 @@
           py-2
           px-4
           m-2
-        "
-        :disabled="state.isLoading || state.overlapped_rows.length"
-        download="trackjoiner.igc"
-        title="télécharger"
-        :href="state.downloadLink"
-      >
-        <svg
-          v-if="state.isLoading"
-          class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-        >
-          <circle
-            class="opacity-25"
-            cx="12"
-            cy="12"
-            r="10"
-            stroke="currentColor"
-            stroke-width="4"
-          ></circle>
-          <path
-            class="opacity-75"
-            fill="currentColor"
-            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-          ></path>
+        " :disabled="state.isLoading || state.overlapped_rows.length" download="trackjoiner.igc" title="télécharger"
+        :href="state.downloadLink">
+        <svg v-if="state.isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+          xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+          </path>
         </svg>
         <i class="fas fa-download"></i>&nbsp;Télécharger
       </a>
+    </div>
+    <div class="flex-col divide-y divide-dashed">
+      <div v-if="state.fixErroneusDTPicker !== null">
+        <datepicker locale="fr" inputClassName="text-sm text-gray-900" v-model="state.fixErroneusDTPicker" enableSeconds
+          autoApply /><br />
+        <button v-if="state.selected_row_original_date != state.fixErroneusDTPicker" @click="clickfixErroneusDT" class="
+          inline-flex
+          items-center
+          font-semibold
+          leading-6
+          text-sm
+          shadow
+          rounded-md
+          text-white
+          bg-blue-500
+          hover:bg-blue-700
+          transition
+          ease-in-out
+          duration-150
+          py-2
+          px-4
+          m-2
+        " :disabled="state.isLoading || state.overlapped_rows.length > 0" :class="
+          state.overlapped_rows.length
+            ? 'bg-slate-200 hover:bg-slate-200 stat'
+            : ''
+        ">
+          <svg v-if="state.isLoading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+            xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+            </path>
+          </svg>
+          Corriger
+        </button>
+      </div>
+      <div id="changePartOfTrackType">
+        bb
+      </div>
     </div>
   </div>
   <track-joiner-help />
@@ -512,26 +406,33 @@
 import { reactive, ref, defineComponent } from "vue";
 import {
   initDB,
+  fixErroneousDT,
   getDBTracksRowsAsPromise,
   getTrackASIgcString,
   getTrackASGpxString,
+  getDBTrackDTStartAsPromise,
   getOverlappedRowsID,
   integrateInPreviousTrack,
   trackTypes,
   fileTypes,
   openFileAsPromise,
   showDB,
- 
+
 } from "trackjoiner";
-import type {Track,} from "trackjoiner";
+import type { Track, } from "trackjoiner";
 import TrackJoinerHelp from "./trackJoinerHelp.vue";
 import Commit from "../../commit.json";
+import Datepicker from '@vuepic/vue-datepicker';
+import '@vuepic/vue-datepicker/dist/main.css';
 
 interface ReactiveData {
   rows: Track[];
   overlapped_rows: string[];
   isLoading: boolean;
   downloadLink: string;
+  selected_row: string;
+  selected_row_original_date: Date;
+  fixErroneusDTPicker: Date;
 }
 export default defineComponent({
   setup() {
@@ -540,6 +441,9 @@ export default defineComponent({
       overlapped_rows: [] as string[],
       isLoading: false,
       downloadLink: "",
+      selected_row: "",
+      selected_row_original_date: null as Date,
+      fixErroneusDTPicker: null as Date,
     });
     const isHashVisible = ref(false);
     return {
@@ -565,11 +469,29 @@ export default defineComponent({
         });
       });
     },
+    clickfixErroneusDT() {
+      if (this.state.selected_row !== "" && this.state.fixErroneusDTPicker !== null) {
+        (this.state as ReactiveData).isLoading = true;
+        fixErroneousDT((this.state as ReactiveData).selected_row, (this.state as ReactiveData).fixErroneusDTPicker).then((value)=>{
+          console.log(value);
+          this.updateRows();
+        });
+       // this.updateRows();
+      }
+    },
     updateRows() {
       getDBTracksRowsAsPromise().then((rows) => {
         (this.state as ReactiveData).rows = rows;
         (this.state as ReactiveData).isLoading = false;
       });
+    },
+    clickLine(id: string) {
+      (this.state as ReactiveData).selected_row = id;
+      
+      getDBTrackDTStartAsPromise(id).then(value => {
+        (this.state as ReactiveData).fixErroneusDTPicker = value;
+        (this.state as ReactiveData).selected_row_original_date = value;
+      })
     },
     clickJoin() {
       (this.state as ReactiveData).isLoading = true;
@@ -592,8 +514,8 @@ export default defineComponent({
             ) {
               console.log(
                 "#row_" +
-                  (this.state as ReactiveData).overlapped_rows[i] +
-                  " OVERLAPPED"
+                (this.state as ReactiveData).overlapped_rows[i] +
+                " OVERLAPPED"
               );
             }
             (this.state as ReactiveData).isLoading = false;
@@ -672,6 +594,7 @@ export default defineComponent({
   },
   components: {
     TrackJoinerHelp,
+    Datepicker,
   },
 });
 </script>
@@ -686,6 +609,7 @@ export default defineComponent({
   0% {
     -webkit-transform: rotate(0deg);
   }
+
   100% {
     -webkit-transform: rotate(360deg);
   }
@@ -695,6 +619,7 @@ export default defineComponent({
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
