@@ -604,6 +604,7 @@ export default defineComponent({
         if (window.location.hash === "#toolbox") {
           (this.state as ReactiveData).toolbox = true;
           (this.state as ReactiveData).changedType = false;
+          (this.state as ReactiveData).splitDTPicker_changed = false;
           getDBTrackTypeAsPromise(id).then(value => {
             (this.state as ReactiveData).selected_row_type = value;
           });
