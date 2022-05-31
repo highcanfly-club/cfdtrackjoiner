@@ -442,7 +442,8 @@
       <div class="flex items-center">
         <p class="text-sm text-gray-700">Changement de type</p>
         <select @change="state.changedType = true" v-model="state.selected_row_type">
-          <option v-for="type in trackTypes" :key="type" :selected="type === state.selected_row_type">{{ type }}</option>
+          <option v-for="type in trackTypes" :key="type" :selected="type === state.selected_row_type">{{ type }}
+          </option>
         </select>
         <button v-if="state.changedType" @click="clickChangeType" class="
           inline-flex
@@ -574,12 +575,12 @@ export default defineComponent({
     },
     clickSplit() {
       if (this.state.selected_row !== "" && this.state.splitDTPicker != null && this.state.splitDTPicker > this.state.splitDTPicker_start && this.state.splitDTPicker < this.state.splitDTPicker_end) {
-        changePartOfTrackType((this.state as ReactiveData).selected_row, 
-        this.state.splitDTPicker_start,
-         this.state.splitDTPicker, 
-         trackTypes.FLY).then(() => {
-          this.updateRows();
-        })
+        changePartOfTrackType((this.state as ReactiveData).selected_row,
+          this.state.splitDTPicker_start,
+          this.state.splitDTPicker,
+          trackTypes.FLY).then(() => {
+            this.updateRows();
+          })
       }
     },
     clickfixErroneusDT() {
@@ -702,11 +703,13 @@ export default defineComponent({
       }
     },
     resolveOverlap(row: Track) {
-      (this.state as ReactiveData).isLoading = true;
-      integrateInPreviousTrack(row.id).then(() => {
-        this.updateRows();
-        (this.state as ReactiveData).overlapped_rows = [];
-      });
+      if ((this.state as ReactiveData).overlapped_rows.length > 0) {
+        (this.state as ReactiveData).isLoading = true;
+        integrateInPreviousTrack(row.id).then(() => {
+          this.updateRows();
+          (this.state as ReactiveData).overlapped_rows = [];
+        });
+      }
     },
     showDB() {
       showDB();
