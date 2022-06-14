@@ -1,7 +1,7 @@
 <template>
   <!-- Aide Slider -->
   <TransitionRoot as="template" :show="slideOpen">
-    <Dialog
+    <DialogHead
       as="div"
       class="fixed inset-0 overflow-hidden z-50"
       @close="slideOpen = false"
@@ -254,7 +254,7 @@
           </TransitionChild>
         </div>
       </div>
-    </Dialog>
+    </DialogHead>
   </TransitionRoot>
   <div
     class="
@@ -280,7 +280,7 @@
 import { defineComponent, ref } from "vue";
 import type {Ref} from "vue";
 import {
-  Dialog,
+  Dialog as DialogHead,
   DialogOverlay,
   DialogTitle,
   TransitionChild,
@@ -301,7 +301,7 @@ export default defineComponent({
     };
   },
   components: {
-    Dialog,
+    DialogHead,
     DialogOverlay,
     DialogTitle,
     TransitionChild,
