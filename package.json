@@ -3,6 +3,7 @@
   "version": "1.2.0",
   "private": true,
   "license": "MIT",
+  "main": "index.ts",
   "scripts": {
     "serve": "vue-cli-service serve",
     "serve-dist": "vue-cli-service build --report && node uglify2.mjs && npx http-server dist",
