@@ -24,7 +24,9 @@
     },
     "include": [
         "src/**/*.ts",
-        "functions/**/*.ts"
+        "functions/**/*.ts",
+        "src/**/*.vue",
+        "index.ts"
     ],
     "exclude": [
         "src/**/*test*.ts"
