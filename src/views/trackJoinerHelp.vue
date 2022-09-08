@@ -1,7 +1,7 @@
 <template>
   <!-- Aide Slider -->
   <TransitionRoot as="template" :show="slideOpen">
-    <Dialog
+    <DialogHead
       as="div"
       class="fixed inset-0 overflow-hidden z-50"
       @close="slideOpen = false"
@@ -254,7 +254,7 @@
           </TransitionChild>
         </div>
       </div>
-    </Dialog>
+    </DialogHead>
   </TransitionRoot>
   <div
     class="
@@ -277,9 +277,10 @@
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, ref,Ref } from "vue";
+import { defineComponent, ref } from "vue";
+import type {Ref} from "vue";
 import {
-  Dialog,
+  Dialog as DialogHead,
   DialogOverlay,
   DialogTitle,
   TransitionChild,
@@ -287,7 +288,7 @@ import {
 } from "@headlessui/vue";
 import Commit from "../../commit.json";
 
-import { RouteLocation } from "vue-router";
+import type { RouteLocation } from "vue-router";
 
 export default defineComponent({
   data() {
@@ -300,7 +301,7 @@ export default defineComponent({
     };
   },
   components: {
-    Dialog,
+    DialogHead,
     DialogOverlay,
     DialogTitle,
     TransitionChild,
