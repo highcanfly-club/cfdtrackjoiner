@@ -281,13 +281,13 @@
                           clickDownload(row.id, $event, fileTypes.IGC)
                         "
                         class="w-6"
-                        :src="require('../assets/IGC.svg')" />&nbsp;
+                        :src="igcImg" />&nbsp;
                       <img
                         @click.once="
                           clickDownload(row.id, $event, fileTypes.GPX)
                         "
                         class="w-6"
-                        :src="require('../assets/GPX.svg')"
+                        :src="gpxImg"
                     /></span>
                   </td>
                 </tr>
@@ -522,10 +522,12 @@ import {
   openFileAsPromise,
   showDB,
  
-} from "trackjoiner";
-import type {Track,} from "trackjoiner";
-import TrackJoinerHelp from "./trackJoinerHelp.vue";
-import Commit from "../../commit.json";
+} from "@/trackjoiner/trackjoiner";
+import type {Track,} from "@/trackjoiner/trackjoiner";
+import TrackJoinerHelp from "@/views/trackJoinerHelp.vue";
+import Commit from "§/commit.json";
+import gpxImg from "@/assets/GPX.svg"
+import igcImg from "@/assets/IGC.svg"
 
 interface ReactiveData {
   rows: Track[];
@@ -554,6 +556,8 @@ export default defineComponent({
       fileTypes,
       trackTypes,
       isHashVisible,
+      gpxImg,
+      igcImg
     };
   },
   methods: {

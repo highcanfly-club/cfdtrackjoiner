@@ -1,32 +1,22 @@
 {
-    "compilerOptions": {
-        "baseUrl": "./",
-        "sourceMap": true,
-        "target": "ES2020",
-        "module": "CommonJS",
-        "lib": [
-            "ES2020",
-            "dom"
-        ],
-        "types": [
-            "node"
-        ],
-        "paths": {
-            "~/*": [
-                "src/app_shared/*"
-            ],
-            "@/*": [
-                "src/*"
-            ]
-        },
-        "resolveJsonModule": true,
-        "esModuleInterop": true
-    },
-    "include": [
-        "src/**/*.ts",
-        "functions/**/*.ts"
-    ],
-    "exclude": [
-        "src/**/*test*.ts"
-    ]
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "importHelpers": true,
+    "isolatedModules": false,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "jsx": "preserve",
+    "resolveJsonModule":true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "§/*": [
+        "./*"
+      ]
+    }
+  }
 }

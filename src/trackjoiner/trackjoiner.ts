@@ -8,9 +8,9 @@
  */
 import Dexie from "dexie";
 import CryptoJS from "crypto-js"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
-import IGCParser from "igc-parser"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
-import { FitParser } from "fit-parser";
-import type { FitData } from "fit-parser";
+import {IGCParser} from "./igc-parser"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
+import { FitParser } from "./fit-parser/fit-parser";
+import type { FitData } from "./fit-parser/fit-parser";
 import gpxParser from "gpxparser"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
 import type { Track as GpxParserTrack } from "gpxparser";
 
