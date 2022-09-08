@@ -286,7 +286,7 @@ import {
   TransitionChild,
   TransitionRoot,
 } from "@headlessui/vue";
-import Commit from "../../commit.json";
+import Commit from "§/commit.json";
 
 import type { RouteLocation } from "vue-router";
 

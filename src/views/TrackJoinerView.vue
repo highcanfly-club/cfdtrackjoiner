@@ -508,12 +508,13 @@ import {
   openFileAsPromise,
   showDB,
 
-} from "trackjoiner";
-import { Track, trackTypes } from "trackjoiner";
-import TrackJoinerHelp from "./trackJoinerHelp.vue";
-import Commit from "../../commit.json";
-import gpxImg from "../assets/GPX.svg"
-import igcImg from "../assets/IGC.svg"
+} from "@/trackjoiner/trackjoiner";
+import { Track, trackTypes } from "@/trackjoiner/trackjoiner";
+import TrackJoinerHelp from "@/views/trackJoinerHelp.vue";
+import Commit from "§/commit.json";
+import gpxImg from "@/assets/GPX.svg"
+import igcImg from "@/assets/IGC.svg"
+import Datepicker from '@vuepic/vue-datepicker'
 
 interface ReactiveData {
   rows: Track[];
