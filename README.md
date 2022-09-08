@@ -1,43 +1,133 @@
-# Vue 3 + Vite + Typescript + Tailwindcss + Fontawesome
+# CFDTrackJoiner
+Technology demonstrator for joining GPX, FIT and IGC files for the new french "CFD Marche et Vol".
+This project is maintained by [High Can Fly | Club de parapente du Nord](https://www.highcanfly.club).
+If you want to help us, your help is welcomed.
+If you want to take your paraglider license with us take a tour on our website, there is a link for getting it.
 
-This template should help get you started developing with Vue 3 in Vite. The template uses [Vue 3](https://vuejs.org/), [Vite](https://vitejs.dev/), [Tailwind css](https://tailwindcss.com/) and [Fontawesome 6](https://fontawesome.com/).
+# Limitations
+This is a pre-alpha version sort of a technology demonstrator.
 
-## Vite
+Today it is only tested with FIT files coming from a Garmin® Fēnix 6x Pro, Garmin® Fēnix 5s or Garmin® Fēnix 3 and IGC files coming from SkyBean® SkyDrop variometer and GPX exported from Strava®.
 
-- @ path is defined as ./src
-- ~ path is defined as ./node_modules
-- § path is defined as ./fontawesome
-- npm run dev : launch development environment and serve it to http://localhost:5173
-- npm run build : compile, optimize and minify to dist/ directory
-- npm run preview : serve dist/ directory to http://localhost:4173
+Currently if an interval overlap another the join is not processed.
 
-## Howto
+# License
+  Provided "as is" under MIT license.
+  
+     * IGC Parser is adapted from Tobias Bieniek's project https://github.com/Turbo87/igc-parser (MIT license)
+     * FIT Parser is adapted from Dimitrios Kanellopoulos's project https://github.com/jimmykane/fit-parser (MIT license)
+     * GPX Parser is adapted from Lucas Trebouet's project https://github.com/Luuka/GPXParser.js (MIT license)
+     
+# Test and basic help
+https://cfdmv.highcanfly.club/  the app  
+https://cfdmv.highcanfly.club/help the same app with the help slider open  
 
-- Simply copy this repo with "Use this template" or fork it
-- Clone your new repo
-- issue "npm i" in your local clone 
-- issue "npm run dev"
-- browser http://localhost:5173
+# Integration in Vue3 project  
+[High Can Fly website](https://www.highcanfly.club) integrates this project in an [integrated card](https://www.highcanfly.club/trackjoiner)  
+[see code in github](https://github.com/eltorio/vue-highcanfly/blob/main/src/views/ViewTrackjoiner.vue)    
+TrackJoinerComponent.vue is a symlink to CFDTrackJoiner/src/views/TrackJoinerView.vue    
 
-## Tailwind css
+# Deploy on Clouflare Pages
+  After forking this repository, you can deploy it on Cloudflare Pages  
+  ```
+  Build command: npm run build
+  Build output directory: /dist
+  Root directory: /
+  ```
+# Vue.js v3
+  * Vue.js v3 code is available at the root https://cfdmv.highcanfly.club
+  * This project is built as a vuejs v3 template. See implentation in /src/views/TrackJoinerView.vue
 
-- Tailwind is embedded with my default theme in tailwindcss.config.cjs
-- All classes are availables in development environment (usefull for UI debug with devtools)
-- Built css is parsed by Purgecss for removing all unused classes, take a look to postcss.config.cjs 
+# Legacy sample usage
+  * Legacy code is still available https://cfdmv.highcanfly.club/legacy2.html
 
-## Fontawesome 6
+  * First, you must include the required JavaScript library (jQuery) you can host them on your website or link them directly from some cdn:
+    ```html
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js'></script>
+    ```
+  * you also need these local sources (minified):
+    ```html
+    <script src="https://cfdmv.highcanfly.club/js/trackjoiner.js"></script>
+    ```
+    if you need the source files:
+    ```html
+    <script src="https://cfdmv.highcanfly.club/js/trackjoiner-dev.js"></script>
+    ```
+  * Second, place the two buttons for flies and for hikes and the button for the result:
+    ```html
+    <input id="filesFly" type='file' accept='.igc,.fit,.gpx' onchange='openFile(event, trackTypes.FLY, insertDBCallback)' multiple disabled/> 
+    <input id="filesHike" type='file' accept='.igc,.fit,.gpx' onchange='openFile(event,trackTypes.HIKE, insertDBCallback)' multiple disabled/>
+    <input id="joinBtn" type='button' onclick='getDBasIGCString()' value="Join" disabled/>
+    ```
 
-- Fontawesome 6 Free is embedded
-- Please use fas, fal, fab… classes rather thant fa-solid, fa-light… (see §/fontawesome/fontawesomeminify.ts)
-- When you build your app, §/fontawesome/fontawesomeminify.ts is run for subsetting roughly all Fontawesome fonts.
-- The main idea is to scan the produced css files, extract all unicode codes and try to subsetting all fa-*.ttf fonts with this unicode list. When done woff/woff2 are derived from the minifyied Truetype font.
-- It is very usefull if you use a few icon and probably divide by 30 your Fontawesome fonts size. (remove the task in package.json if you don't want)
+    The openFile function will be the entry point of the process. Function insertDBCallback is the call back function called when parsing and DB insert are finished.
+    In a minimal void process an empty function will be sufficient but something more complex will be probably necessary.
+    For example in the provided index.hml page the call back is used for filling an html table with the current content of the DB and enabling a button for retrieving the result
+    ```javascript
+    var insertDBCallback = function(){
+      showHTMLTable("#parsedTable");      // Look at index.html for seeing showHTMLTable
+      $('#joinBtn').removeAttr('disabled');
+    };
+    ```
 
-## Recommended IDE Setup
+  * Third, init everything
+    In the provided example the initialization is very simple
+    ```javascript
+      initDB();                                   // Needed for preparing the database
+     $(window).on('load', function() {            // Be sure to wait for all the libraries to be loaded before allowing parsing
+        $('#filesFly').removeAttr('disabled');    // now the load event was fired so the buttons can be enabled
+        $('#filesHike').removeAttr('disabled');
+     });
+    ```
 
-- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar)
+  * Finally, get the result!
+    ```javascript
+    var getDBasIGCString = function(){
+      getDBFixesRowsAsPromise().then((rows) => {
+                      var igcString = igcProducer(rows);
+                      // the IGC file is now in igcString variable
+                      // use it as you want
+                      // a more complex example is in index.html
+                    }).catch((error) => {
+                      console.log(error.toString());
+                    });   
+     };
+    ```
 
-## License
+  * If you want to upload the string as a pseudo file this is a sample fuction for doing that
+    ```javascript
+    simpleStringUploadAsFile('https://parapente.ffvl.fr/cfdmvAPI','file',"TEMP.IGC",igcString,"ffvl_name","ffvl_password");
+    ```
+    Note that on the demo page call is
+    ```javascript
+    simpleStringUploadAsFile('upload.php','file','TEMP.IGC',$('#igcResult').html(),'ffvl_name','ffvl_password');
+    ```
 
-- [MIT](https://github.com/eltorio/vue-vite-tailwindcss-fontawesome/blob/main/LICENSE.md) for my work
-- others are under their own license
+    so the content of the "igcResult" html pre tag is sent to the upload.php page. The demo is not working on GitHub pages because there is no server side processor but on my own server it works 😉.
+
+    these function can be something like:
+    ```javascript
+    var simpleStringUploadAsFile = function (uploadURL, fileFormFieldName, fileName, data,name,password)
+    {
+
+      var fd = new FormData();                            //works on all modern browsers
+      var file = new Blob([data], {type: 'plain/text'});
+
+      fd.append(fileFormFieldName, file, fileName);       //this is the <input type='file' name='file'/>
+      fd.append('name',name);                             //<input type='text' name='name' />
+      fd.append('password',password);                     //<input type='password' name='password' />
+      //... fd.append('field_name','value');
+
+      $.ajax({
+        url: uploadURL,
+        method: 'post',
+        data: fd,
+        processData: false,
+        contentType: false ,
+        success: function(response){$("html").html(response);}  // this is for replacing the content of the page with the POST result
+      });
+    }
+    ```
+
+# API documentation
+  * Typedoc is built at https://eltorio.github.io/cfdtrackjoiner/
