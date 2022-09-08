@@ -226,12 +226,20 @@
                         cursor-pointer
                         text-blue-600
                         hover:text-indigo-900
-                      "><img @click.once="
-                        clickDownload(row.id, $event, fileTypes.IGC)
-                      " class="w-6" :src="require('../assets/IGC.svg')" />&nbsp;
-                      <img @click.once="
-                        clickDownload(row.id, $event, fileTypes.GPX)
-                      " class="w-6" :src="require('../assets/GPX.svg')" /></span>
+                      "
+                      ><img
+                        @click.once="
+                          clickDownload(row.id, $event, fileTypes.IGC)
+                        "
+                        class="w-6"
+                        :src="igcImg" />&nbsp;
+                      <img
+                        @click.once="
+                          clickDownload(row.id, $event, fileTypes.GPX)
+                        "
+                        class="w-6"
+                        :src="gpxImg"
+                    /></span>
                   </td>
                 </tr>
               </tbody>
@@ -504,8 +512,8 @@ import {
 import { Track, trackTypes } from "trackjoiner";
 import TrackJoinerHelp from "./trackJoinerHelp.vue";
 import Commit from "../../commit.json";
-import Datepicker from '@vuepic/vue-datepicker';
-//import '@vuepic/vue-datepicker/dist/main.css';
+import gpxImg from "../assets/GPX.svg"
+import igcImg from "../assets/IGC.svg"
 
 interface ReactiveData {
   rows: Track[];
@@ -554,6 +562,8 @@ export default defineComponent({
       fileTypes,
       trackTypes,
       isHashVisible,
+      gpxImg,
+      igcImg
     };
   },
   methods: {
