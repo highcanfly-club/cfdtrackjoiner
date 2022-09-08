@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npx typedoc --entryPoints ./src/trackjoiner/trackjoiner.ts && vite build && node --loader ts-node/esm ./fontawesome/fontawesomeminify.ts && gulp licenses && node uglify2.mjs",
+    "build": "node --loader ts-node/esm ./prepare-env.ts && npx typedoc --entryPoints ./src/trackjoiner/trackjoiner.ts && vite build && node --loader ts-node/esm ./fontawesome/fontawesomeminify.ts && gulp licenses && node uglify2.mjs",
     "preview": "vite preview",
     "uglify": "node uglify.js",
     "prepare-env": "node --loader ts-node/esm ./prepare-env.ts",
