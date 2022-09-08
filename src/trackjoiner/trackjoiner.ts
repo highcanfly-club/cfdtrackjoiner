@@ -6,7 +6,7 @@
  * FIT Parser is adapted from Dimitrios Kanellopoulos's project https://github.com/jimmykane/fit-parser (MIT license)
  * GPX Parser is adapted from Lucas Trebouet's project https://github.com/Luuka/GPXParser.js (MIT license)
  */
-import Dexie from "dexie";
+ import Dexie from "dexie";
 import CryptoJS from "crypto-js"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
 import {IGCParser} from "./igc-parser"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
 import { FitParser } from "./fit-parser/fit-parser";
@@ -22,18 +22,27 @@ const FIT_DEFAULT_GLIDER_TYPE = "FIT-GLIDER";
 let igc_glider_type = IGC_GLIDER_TYPE;
 let myTrackjoinerDB = null as TrackjoinerDB;
 
+/**
+ * track Types in the DB
+ */
 enum trackTypes {
   FLY = "F",
   HIKE = "H",
   MIXED = "",
 }
 
+/**
+ * Actual supported file types
+ */
 enum fileTypes {
   FIT = "FIT",
   GPX = "GPX",
   IGC = "IGC",
 }
 
+/**
+ * Contain a Track in the indexedDB
+ */
 export interface Track {
   id: string;
   dt_start: Date;
@@ -47,7 +56,7 @@ export interface Track {
 }
 
 /**
- * 
+ * Contain a Fix in the IndexedDB
  */
 export interface Fix {
   id?: number;
@@ -60,6 +69,50 @@ export interface Fix {
   type: trackTypes;
 }
 
+/**
+ * Strava GPX track type (experimental analysis)
+ */
+export enum StravaType {
+  Ride = 1,
+  Alpine_Ski = 2,
+  Backcountry_Ski = 3,
+  Hike = 4,
+  Ice_Skate = 5,
+  Inline_Skate = 6,
+  Nordic_Ski = 7,
+  Roller_Ski = 8,
+  Run = 9,
+  Walk = 10,
+  Workout = 11,
+  Snowboard = 12,
+  Snowshoe = 13,
+  Kitesurf = 14,
+  Paragliding = 14,  /*Paragliding is exported as Kitesurf*/
+  Windsurf = 15,
+  Swim = 16,
+  Virtual_Ride = 17,
+  E_Bike_Ride = 18,
+  Velomobile = 19,
+  Sailing = 20,
+  Canoe = 21,
+  Kayaking = 22,
+  Rowing = 23,
+  Stand_Up_Paddling = 24,
+  Surfing = 25,
+  Crossfit = 26,
+  Elliptical = 27,
+  Rock_Climb = 28,
+  Stair_Stepper = 29,
+  Weight_Training = 30,
+  Yoga = 31,
+  Handcycle = 51,
+  Wheelchair = 52,
+}
+
+/**
+ * our database
+ * @internal
+ */
 class TrackjoinerDB extends Dexie {
   fixes!: Dexie.Table<Fix, number>;
   tracks!: Dexie.Table<Track, string>;
@@ -67,10 +120,11 @@ class TrackjoinerDB extends Dexie {
     super(nanoDB_name);
     this.version(DB_SCHEMA_VERSION).stores({
       fixes: '++id,track_id,ts',
-      tracks: 'id,ts_start,gliderType',
+      tracks: 'id,ts_start,gliderType, nb_fixes',
     });
   }
 }
+
 /**
  * still no XOR in EMEA JavaScript
  * @param a
@@ -176,7 +230,7 @@ const insertIGCTrackInDBAsPromise = function (
       })
     }
   }
-  if (fixes.length){
+  if (fixes.length) {
     bulkFixInsert = myTrackjoinerDB.fixes.bulkAdd(fixes);
   }
   // Promise.all(fixInserted).then(() => {
@@ -254,7 +308,7 @@ const insertGPXTrackInDBAsPromise = function (
       type: trackType, //WIP use IGC for hike
     });
   }
-  if (fixes.length){
+  if (fixes.length) {
     bulkFixInsert = myTrackjoinerDB.fixes.bulkAdd(fixes);
   }
   return Promise.all([trackPromise, bulkFixInsert]);
@@ -327,20 +381,20 @@ const insertFITTrackInDBAsPromise = function (
       typeof fitTrack.records[i].enhanced_altitude != "undefined"
         ? fitTrack.records[i].enhanced_altitude
         : fitTrack.records[i].altitude;
-      fixes.push({
-        track_id: hashHex,
-        point: {
-          lat: fitTrack.records[i].position_lat,
-          lon: fitTrack.records[i].position_long,
-        },
-        gpsAltitude: gpsAltitude,
-        preciseAltitude: fitTrack.records[i].enhanced_altitude,
-        dt: fitTrack.records[i].timestamp,
-        ts: fitTrack.records[i].timestamp.getTime(),
-        type: trackType, // WIP use FIT for fly
-      });
+    fixes.push({
+      track_id: hashHex,
+      point: {
+        lat: fitTrack.records[i].position_lat,
+        lon: fitTrack.records[i].position_long,
+      },
+      gpsAltitude: gpsAltitude,
+      preciseAltitude: fitTrack.records[i].enhanced_altitude,
+      dt: fitTrack.records[i].timestamp,
+      ts: fitTrack.records[i].timestamp.getTime(),
+      type: trackType, // WIP use FIT for fly
+    });
   }
-  if (fixes.length){
+  if (fixes.length) {
     bulkFixInsert = myTrackjoinerDB.fixes.bulkAdd(fixes);
   }
   return Promise.all([trackPromise, bulkFixInsert]);
@@ -758,38 +812,47 @@ const addTimestampToDateObject = function (ts: number, dateObject: Date): Date {
  * @param {string} trackId
  * @param {*} realDTStart
  */
-const fixErroneousDT = function (trackId: string, realDTStart: Date) {
-  let tracksPromise: Promise<number> = null;
-  const fixesPromise: Promise<number>[] = [];
-  getDBTrackRowAsPromise(trackId).then((track) => {
-    const Δt = realDTStart.getTime() - new Date(track[0].dt_start).getTime();
-    tracksPromise = myTrackjoinerDB.tracks.update(trackId, {
-      dt_start: addTimestampToDateObject(
-        Δt,
-        new Date(track[0].dt_start)
-      ),
-      ts_start: track[0].ts_start + Δt,
-      dt_end: addTimestampToDateObject(
-        Δt,
-        new Date(track[0].dt_end)
-      ),
-      ts_end: track[0].ts_end + Δt,
-    });
+const fixErroneousDT = function (trackId: string, realDTStart: Date): Promise<number> {
 
-    getDBFixesTrackRowAsPromise(trackId).then((fixes) => {
-      for (let i = 0; i < fixes.length; i++) {
-        fixesPromise.push(
-          myTrackjoinerDB.fixes.update(fixes[i], {
-            dt: addTimestampToDateObject(
+  return new Promise<number>((resolve) => {
+    getDBTrackRowAsPromise(trackId).then((track) => {
+      const Δt = realDTStart.getTime() - new Date(track[0].dt_start).getTime();
+      myTrackjoinerDB.tracks.update(trackId, {
+        dt_start: addTimestampToDateObject(
+          Δt,
+          new Date(track[0].dt_start)
+        ),
+        ts_start: track[0].ts_start + Δt,
+        dt_end: addTimestampToDateObject(
+          Δt,
+          new Date(track[0].dt_end)
+        ),
+        ts_end: track[0].ts_end + Δt,
+      }).then(() => {
+        getDBFixesTrackRowAsPromise(trackId).then((fixes) => {
+          const bulkMods: Fix[] = [];
+          for (let i = 0; i < fixes.length; i++) {
+            const nDate = addTimestampToDateObject(
               Δt,
               new Date(fixes[i].dt)
-            )
-          })
-        );
-      }
+            );
+            const cFix: Fix = {
+              id: fixes[i].id,
+              track_id: fixes[i].track_id,
+              point: fixes[i].point,
+              preciseAltitude: fixes[i].preciseAltitude,
+              gpsAltitude: fixes[i].gpsAltitude,
+              dt: nDate,
+              ts: nDate.getTime(),
+              type: fixes[i].type
+            }
+            bulkMods.push(cFix);
+          }
+          resolve(myTrackjoinerDB.fixes.bulkPut(bulkMods));
+        });
+      });
     });
-  });
-  Promise.all([tracksPromise, ...fixesPromise]);
+  })
 };
 
 /**
@@ -804,23 +867,19 @@ const insertFixesArrayInDB = function (
   trackId: string,
   fixesArray: Fix[]
 ): Promise<number> {
-  return new Promise(function (resolve) {
-    const promisedAll = [];
-    for (let i = 0; i < fixesArray.length; i++) {
-      promisedAll.push(
-        myTrackjoinerDB.fixes.add({
-          track_id: trackId,
-          point: fixesArray[i].point,
-          gpsAltitude: fixesArray[i].gpsAltitude,
-          preciseAltitude: fixesArray[i].preciseAltitude,
-          dt: fixesArray[i].dt,
-          ts: fixesArray[i].ts,
-          type: fixesArray[i].type,
-        })
-      );
-    }
-    Promise.all(promisedAll).then((value) => resolve(value.length));
-  });
+  const fixes: Fix[] = [];
+  for (let i = 0; i < fixesArray.length; i++) {
+    fixes.push({
+      track_id: trackId,
+      point: fixesArray[i].point,
+      gpsAltitude: fixesArray[i].gpsAltitude,
+      preciseAltitude: fixesArray[i].preciseAltitude,
+      dt: fixesArray[i].dt,
+      ts: fixesArray[i].ts,
+      type: fixesArray[i].type,
+    });
+  }
+  return myTrackjoinerDB.fixes.bulkAdd(fixes) as Promise<number>;
 };
 
 /**
@@ -1122,6 +1181,7 @@ const cutOverlapping = function (
 
             const fixesDelete = myTrackjoinerDB.fixes.where('track_id').equalsIgnoreCase(track_B_row.id).delete();
             const tracksDelete = myTrackjoinerDB.tracks.delete(track_B_row.id);
+            const orphanedDeletedTracks = removeOrphanedTracksAsPromise();
 
             Promise.all([
               insertTrackB1,
@@ -1130,6 +1190,7 @@ const cutOverlapping = function (
               nbB2FixesInserted,
               fixesDelete,
               tracksDelete,
+              orphanedDeletedTracks,
             ]).then(
               (
               ) => {
@@ -1173,7 +1234,7 @@ const getDBTrackRowAsPromise = function (trackId: string): Promise<Track[]> {
 const getDBFirstGliderType = function (): Promise<string> {
   return new Promise<string>(function (resolve) {
     myTrackjoinerDB.tracks.where('gliderType')
-      .noneOf([IGC_GLIDER_TYPE,''])
+      .noneOf([IGC_GLIDER_TYPE, ''])
       .toArray().then((tracks: Track[]) => {
         if (
           typeof tracks[0] != "undefined" &&
@@ -1196,6 +1257,28 @@ const getDBFirstGliderType = function (): Promise<string> {
 const getDBTrackDTStartAsPromise = function (trackId: string): Promise<Date> {
   return getDBTrackRowAsPromise(trackId).then((rows) => {
     return rows[0]["dt_start"];
+  });
+};
+
+/**
+ *
+ * @param {string} trackId
+ * @returns A promise with the end date
+ */
+ const getDBTrackDTEndAsPromise = function (trackId: string): Promise<Date> {
+  return getDBTrackRowAsPromise(trackId).then((rows) => {
+    return rows[0].dt_end;
+  });
+};
+
+/**
+ *
+ * @param {string} trackId
+ * @returns A promise with the type
+ */
+ const getDBTrackTypeAsPromise = function (trackId: string): Promise<trackTypes> {
+  return getDBTrackRowAsPromise(trackId).then((rows) => {
+    return rows[0].type;
   });
 };
 
@@ -1327,6 +1410,37 @@ const getTrackASIgcString = function (trackId?: string): Promise<string> {
 };
 
 /**
+ * @internal
+ * @param trackType 
+ * @returns the Strava equivalent type
+ */
+const getStravaGpxTypeFromTrackType = function (trackType: trackTypes): StravaType {
+  switch (trackType) {
+    case trackTypes.FLY:
+      return StravaType.Paragliding;
+      break;
+    case trackTypes.MIXED:
+      return StravaType.Workout;
+      break;
+    case trackTypes.HIKE:
+      return StravaType.Hike;
+      break;
+    default:
+      return StravaType.Workout;
+  }
+}
+
+/**
+ * 
+ * @param trackName 
+ * @param trackType 
+ * @returns the gpx track header
+ */
+const gpxProducerTrackHeader = function (trackName: string, trackType: trackTypes): string {
+  return `<trk><name>${trackName}</name><type>${getStravaGpxTypeFromTrackType(trackType) as number}</type><desc></desc><trkseg>`;
+}
+
+/**
  * Create a GPX file with an array of fixes
  * @param fixes 
  * @returns a valid GPX file as a string
@@ -1334,22 +1448,31 @@ const getTrackASIgcString = function (trackId?: string): Promise<string> {
 const gpxProducer = function (fixes: Fix[]): string {
   let result =
     '<?xml version="1.0" encoding="UTF-8"?>\n<gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd" version="1.1" creator="CFDTrackjoiner">';
-  result += `<metadata/><trk><name></name><desc></desc><trkseg>`;
-  result += fixes.reduce((accum, curr) => {
-    let segmentTag = "";
-    if (curr.point.lat !== undefined && curr.point.lon !== undefined) {
-      segmentTag += `<trkpt lat="${curr.point.lat}" lon="${curr.point.lon}">`;
-      segmentTag +=
-        curr.gpsAltitude !== undefined ? `<ele>${curr.gpsAltitude}</ele>` : "";
-      segmentTag +=
-        curr.dt !== undefined
-          ? `<time>${new Date(curr.dt).toISOString()}</time>`
-          : "";
-      segmentTag += `</trkpt>`;
+
+  result += `<metadata/>`;
+  let lastType: trackTypes = null;
+  for (let i = 0; i < fixes.length; i++) { //strange but for loop is faster than Array.reduce()
+    if (i == 0) {
+      lastType = fixes[i].type;
+      result += gpxProducerTrackHeader(fixes[i].track_id, lastType);
     }
-    return (accum += segmentTag);
-  }, "");
-  result += "</trkseg></trk></gpx>";
+    if (lastType != fixes[i].type) {
+      result += `</trkseg></trk>`;
+      lastType = fixes[i].type;
+      result += gpxProducerTrackHeader(fixes[i].track_id, lastType);
+    }
+    if (fixes[i].point.lat !== undefined && fixes[i].point.lon !== undefined) {
+      result += `<trkpt lat="${fixes[i].point.lat}" lon="${fixes[i].point.lon}">`;
+      result +=
+        fixes[i].gpsAltitude !== undefined ? `<ele>${fixes[i].gpsAltitude}</ele>` : "";
+      result +=
+        fixes[i].dt !== undefined
+          ? `<time>${new Date(fixes[i].dt).toISOString()}</time>`
+          : "";
+      result += `</trkpt>`;
+    }
+  }
+  result += `</trkseg></trk></gpx>`;
   return result;
 };
 
@@ -1502,6 +1625,13 @@ const integrateInPreviousTrack = function (trackId: string): Promise<string[]> {
 };
 
 /**
+ * Remove tracks without any fixes
+ * @returns the number of deleted tracks
+ */
+const removeOrphanedTracksAsPromise = function (): Promise<number> {
+  return myTrackjoinerDB.tracks.where('nb_fixes').equals(0).delete() as Promise<number>;
+}
+/**
  * showDB the DB in console
  */
 const showDB = function (): void {
@@ -1535,11 +1665,14 @@ export {
   fixErroneousDT,
   getDBFirstGliderType,
   getDBFixesRowsAsPromise,
+  getDBTrackDTEndAsPromise,
   getDBTrackDTStartAsPromise,
   getDBTracksRowsAsPromise,
+  getDBTrackTypeAsPromise,
   getFileExtension,
   getFileName,
   getOverlappedRowsID,
+  getStravaGpxTypeFromTrackType,
   getTrackASGpxString,
   getTrackASIgcString,
   gpxProducer,
@@ -1575,6 +1708,7 @@ export {
   openGPXFileTreatSingle,
   openIGCFile,
   openIGCFileTreatSingle,
+  removeOrphanedTracksAsPromise,
   showDB,
   splitTrackIn2,
   splitTrackIn3,
