@@ -605,8 +605,8 @@ export default defineComponent({
       fileContent: string,
       filename: string
     ) {
-      var a = document.createElement("a");
-      var iLink = document.createElement("i");
+      const a = document.createElement("a");
+      const iLink = document.createElement("i");
       iLink.className = "fas fa-download";
       a.appendChild(iLink);
       a.title = "Télécharger";
