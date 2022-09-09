@@ -20,7 +20,8 @@ const GPX_FILE = "./dist/js/gpx-parser.js";
 const FIT_FILE = "./dist/js/fit-parser.js";
 const IGC_TS = "./src/trackjoiner/igc-parser/index.ts";
 const IGC_JS = "./src/trackjoiner/igc-parser/index.js";
-
+const GPX_TS = "./src/trackjoiner/gpx-parser/index.ts";
+const GPX_JS = "./src/trackjoiner/gpx-parser/index.js";
 
 function mdSync(dir) {
     fs.mkdirSync(dir, { recursive: true }, (err) => {
@@ -90,7 +91,8 @@ fs.copyFile('./public/legacy2.html', './dist/legacy2.html', callbackErr);
 console.log(`compiling ${TRACKJOINER} and create bundle ${DEV_BUNDLE}`);
 Promise.all([
     compileTypeScript(TRACKJOINER_TS, TRACKJOINER),
-    compileTypeScript(IGC_TS, IGC_JS)
+    compileTypeScript(IGC_TS, IGC_JS),
+    compileTypeScript(GPX_TS, GPX_JS)
 ]).then(() => {
     browserify({ standalone: "Trackjoiner" })
         .add(TRACKJOINER)
@@ -111,6 +113,7 @@ Promise.all([
                 console.log("removed temp files");
                 fs.rmSync(DEV_BUNDLE);
                 fs.rmSync(IGC_JS);
+                fs.rmSync(GPX_JS);
                 fs.rmSync(TRACKJOINER);
                 console.log("Add messages telling that old scripts are not needed anymore")
                 fs.writeFileSync(IGC_FILE, `console.log("${IGC_FILE} ${NOMORENEEDED}");`);

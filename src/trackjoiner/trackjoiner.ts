@@ -6,13 +6,13 @@
  * FIT Parser is adapted from Dimitrios Kanellopoulos's project https://github.com/jimmykane/fit-parser (MIT license)
  * GPX Parser is adapted from Lucas Trebouet's project https://github.com/Luuka/GPXParser.js (MIT license)
  */
- import Dexie from "dexie";
-import CryptoJS from "crypto-js"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
-import {IGCParser} from "./igc-parser"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
-import { FitParser } from "./fit-parser/fit-parser";
-import type { FitData } from "./fit-parser/fit-parser";
-import gpxParser from "gpxparser"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
-import type { Track as GpxParserTrack } from "gpxparser";
+import Dexie from "dexie";
+import CryptoES from "crypto-es"; 
+import {IGCParser} from "./igc-parser"; 
+import { FitParser } from "./fit-parser";
+import type { FitData } from "./fit-parser";
+import {gpxParser} from "./gpx-parser"; 
+import type { Track as GpxParserTrack } from "./gpx-parser";
 
 const DB_SCHEMA_VERSION = 1;
 const nanoDB_name = "cfdmv_db";
@@ -418,11 +418,11 @@ const getFileExtension = function (fileName: string): string {
 };
 
 /**
- * CryptoJS  needs word array so this is an optimized conversion
+ * CryptoES  needs word array so this is an optimized conversion
  * @param ab Input ArrayBuffer
  * @returns the converted word array
  */
-const arrayBufferToWordArray = function (ab: ArrayBuffer): CryptoJS.lib.WordArray {
+const arrayBufferToWordArray = function (ab: ArrayBuffer): CryptoES.lib.WordArray {
   const i8a = new Uint8Array(ab);
   const a = [];
   for (let i = 0; i < i8a.length; i += 4) {
@@ -430,7 +430,7 @@ const arrayBufferToWordArray = function (ab: ArrayBuffer): CryptoJS.lib.WordArra
       (i8a[i] << 24) | (i8a[i + 1] << 16) | (i8a[i + 2] << 8) | i8a[i + 3]
     );
   }
-  return CryptoJS.lib.WordArray.create(a, i8a.length);
+  return CryptoES.lib.WordArray.create(a, i8a.length);
 };
 
 /**
@@ -450,8 +450,8 @@ const openIGCFileTreatSingle = function (
     const igcFile = event.target;
     const text = igcFile.result as string;
     const fileName = getFileName(file.name);
-    const hash = CryptoJS.SHA256(text);
-    const hashHex = hash.toString(CryptoJS.enc.Hex);
+    const hash = CryptoES.SHA256(text);
+    const hashHex = hash.toString(CryptoES.enc.Hex);
     console.log(
       "fileName:" +
       fileName +
@@ -517,8 +517,8 @@ const openFITFileTreatSingle = function (
     const fitFile = event.target;
     const blob = fitFile.result as ArrayBuffer;
     const fileName = getFileName(file.name);
-    const hash = CryptoJS.SHA256(arrayBufferToWordArray(blob));
-    const hashHex = hash.toString(CryptoJS.enc.Hex);
+    const hash = CryptoES.SHA256(arrayBufferToWordArray(blob));
+    const hashHex = hash.toString(CryptoES.enc.Hex);
     console.log(fileName);
     fitParser.parse(blob, function (error: string, data: FitData) {
       // Handle result of parse method
@@ -576,8 +576,8 @@ const openGPXFileTreatSingle = function (
     const gpxFile = event.target;
     const gpxText = gpxFile.result as string;
     const fileName = getFileName(file.name);
-    const hash = CryptoJS.SHA256(gpxText);
-    const hashHex = hash.toString(CryptoJS.enc.Hex);
+    const hash = CryptoES.SHA256(gpxText);
+    const hashHex = hash.toString(CryptoES.enc.Hex);
     console.log(fileName);
     const _gpxParser = new gpxParser();
     _gpxParser.parse(gpxText);
@@ -629,9 +629,9 @@ const openFileTreatSingleAsPromise = function (
       const fileContent = trackFile.result as string;
       const hash =
         fileExtension == fileTypes.FIT
-          ? CryptoJS.SHA256(arrayBufferToWordArray(trackFile.result as ArrayBuffer))
-          : CryptoJS.SHA256(trackFile.result as string); // FIT format is binay
-      const hashHex = hash.toString(CryptoJS.enc.Hex);
+          ? CryptoES.SHA256(arrayBufferToWordArray(trackFile.result as ArrayBuffer))
+          : CryptoES.SHA256(trackFile.result as string); // FIT format is binay
+      const hashHex = hash.toString(CryptoES.enc.Hex);
       console.log(fileName);
       switch (fileExtension) {
         case fileTypes.FIT:
@@ -913,17 +913,17 @@ const splitTrackIn3 = function (
     let P1FixesInsertedPromise: Promise<number> = null;
     let P2FixesInsertedPromise: Promise<number> = null;
     let P3FixesInsertedPromise: Promise<number> = null;
-    let track_p1_id: CryptoJS.lib.WordArray = null;
-    let track_p2_id: CryptoJS.lib.WordArray = null;
-    let track_p3_id: CryptoJS.lib.WordArray = null;
+    let track_p1_id: CryptoES.lib.WordArray = null;
+    let track_p2_id: CryptoES.lib.WordArray = null;
+    let track_p3_id: CryptoES.lib.WordArray = null;
     getDBTrackRowAsPromise(trackId).then((rows) => {
       const trackRow = rows[0];
       const ts_cut_1 = dt_cut_1.getTime();
       const ts_cut_2 = dt_cut_2.getTime();
       if (trackRow.ts_start < ts_cut_1 && trackRow.ts_end > ts_cut_2) {
-        track_p1_id = CryptoJS.SHA256(trackRow.id + "-P1");
-        track_p2_id = CryptoJS.SHA256(trackRow.id + "-P2");
-        track_p3_id = CryptoJS.SHA256(trackRow.id + "-P3");
+        track_p1_id = CryptoES.SHA256(trackRow.id + "-P1");
+        track_p2_id = CryptoES.SHA256(trackRow.id + "-P2");
+        track_p3_id = CryptoES.SHA256(trackRow.id + "-P3");
         const readGliderTypeIfAny = getDBFirstGliderType();
         const P1_fixes_promise = myTrackjoinerDB.fixes.where('track_id').equalsIgnoreCase(trackRow.id).and((fix) => { return fix.ts < ts_cut_1 }).toArray();
         const P2_fixes_promise = myTrackjoinerDB.fixes.where('track_id').equalsIgnoreCase(trackRow.id).and((fix) => { return (fix.ts > ts_cut_1) && (fix.ts < ts_cut_2) }).toArray();
@@ -948,7 +948,7 @@ const splitTrackIn3 = function (
           if (P1_fixes.length > 0) {
             promisedAll.push(
               myTrackjoinerDB.tracks.add({
-                id: track_p1_id.toString(CryptoJS.enc.Hex),
+                id: track_p1_id.toString(CryptoES.enc.Hex),
                 dt_start: new Date(trackRow.ts_start),
                 ts_start: trackRow.ts_start,
                 dt_end: new Date(ts_cut_1 - 1),
@@ -960,17 +960,17 @@ const splitTrackIn3 = function (
                   trackRow.type == trackTypes.FLY ? igc_glider_type : "",
               }).then(() => {
                 P1FixesInsertedPromise = insertFixesArrayInDB(
-                  track_p1_id.toString(CryptoJS.enc.Hex),
+                  track_p1_id.toString(CryptoES.enc.Hex),
                   P1_fixes
                 );
-                splittedId.push(track_p1_id.toString(CryptoJS.enc.Hex));
+                splittedId.push(track_p1_id.toString(CryptoES.enc.Hex));
               })
             );
           }
           if (P2_fixes.length > 0) {
             promisedAll.push(
               myTrackjoinerDB.tracks.add({
-                id: track_p2_id.toString(CryptoJS.enc.Hex),
+                id: track_p2_id.toString(CryptoES.enc.Hex),
                 dt_start: new Date(ts_cut_1),
                 ts_start: ts_cut_1,
                 dt_end: new Date(ts_cut_2),
@@ -982,17 +982,17 @@ const splitTrackIn3 = function (
                   trackRow.type == trackTypes.FLY ? igc_glider_type : "",
               }).then(() => {
                 P2FixesInsertedPromise = insertFixesArrayInDB(
-                  track_p2_id.toString(CryptoJS.enc.Hex),
+                  track_p2_id.toString(CryptoES.enc.Hex),
                   P2_fixes
                 );
-                splittedId.push(track_p2_id.toString(CryptoJS.enc.Hex));
+                splittedId.push(track_p2_id.toString(CryptoES.enc.Hex));
               })
             );
           }
           if (P3_fixes.length > 0) {
             promisedAll.push(
               myTrackjoinerDB.tracks.add({
-                id: track_p3_id.toString(CryptoJS.enc.Hex),
+                id: track_p3_id.toString(CryptoES.enc.Hex),
                 dt_start: new Date(ts_cut_2 + 1),
                 ts_start: ts_cut_2 + 1,
                 dt_end: new Date(trackRow.ts_end),
@@ -1004,10 +1004,10 @@ const splitTrackIn3 = function (
                   trackRow.type == trackTypes.FLY ? igc_glider_type : "",
               }).then(() => {
                 P3FixesInsertedPromise = insertFixesArrayInDB(
-                  track_p3_id.toString(CryptoJS.enc.Hex),
+                  track_p3_id.toString(CryptoES.enc.Hex),
                   P3_fixes
                 );
-                splittedId.push(track_p3_id.toString(CryptoJS.enc.Hex));
+                splittedId.push(track_p3_id.toString(CryptoES.enc.Hex));
               })
             );
           }
@@ -1127,11 +1127,11 @@ const cutOverlapping = function (
         ) {
           //so A is in B
           console.log(track_A_id + " is in " + track_B_id);
-          const track_B1_id = CryptoJS.SHA256(track_B_row.id + "-B1");
-          const track_B2_id = CryptoJS.SHA256(track_B_row.id + "-B2");
+          const track_B1_id = CryptoES.SHA256(track_B_row.id + "-B1");
+          const track_B2_id = CryptoES.SHA256(track_B_row.id + "-B2");
           const splittedId = [
-            track_B1_id.toString(CryptoJS.enc.Hex),
-            track_B2_id.toString(CryptoJS.enc.Hex),
+            track_B1_id.toString(CryptoES.enc.Hex),
+            track_B2_id.toString(CryptoES.enc.Hex),
           ];
           const B1_fixes_promise = myTrackjoinerDB.fixes.where('track_id').equalsIgnoreCase(track_B_row.id).and((fix: Fix) => { return fix.ts < track_A_row.ts_start }).toArray();
           const B2_fixes_promise = myTrackjoinerDB.fixes.where('track_id').equalsIgnoreCase(track_B_row.id).and((fix: Fix) => { return fix.ts > track_A_row.ts_end }).toArray();
@@ -1145,7 +1145,7 @@ const cutOverlapping = function (
             const B2_fixes = promisedDB_BRows[1];
             const gliderType = promisedDB_BRows[2];
             const insertTrackB1 = myTrackjoinerDB.tracks.add({
-              id: track_B1_id.toString(CryptoJS.enc.Hex),
+              id: track_B1_id.toString(CryptoES.enc.Hex),
               dt_start: new Date(track_B_row.ts_start),
               ts_start: track_B_row.ts_start,
               dt_end: new Date(track_A_row.ts_start - 1),
@@ -1157,7 +1157,7 @@ const cutOverlapping = function (
                 track_B_row.type == trackTypes.FLY ? gliderType : "",
             })
             const insertTrackB2 = myTrackjoinerDB.tracks.add({
-              id: track_B2_id.toString(CryptoJS.enc.Hex),
+              id: track_B2_id.toString(CryptoES.enc.Hex),
               dt_start: new Date(track_A_row.ts_end + 1),
               ts_start: track_A_row.ts_end + 1,
               dt_end: new Date(track_B_row.ts_end),
@@ -1170,12 +1170,12 @@ const cutOverlapping = function (
             })
 
             const nbB1FixesInserted = insertFixesArrayInDB(
-              track_B1_id.toString(CryptoJS.enc.Hex),
+              track_B1_id.toString(CryptoES.enc.Hex),
               B1_fixes
             );
 
             const nbB2FixesInserted = insertFixesArrayInDB(
-              track_B2_id.toString(CryptoJS.enc.Hex),
+              track_B2_id.toString(CryptoES.enc.Hex),
               B2_fixes
             );
 
