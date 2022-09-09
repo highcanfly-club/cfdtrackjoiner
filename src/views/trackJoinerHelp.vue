@@ -218,9 +218,9 @@
                         uppercase
                       "
                       ><img class="w-6"
-                        :src="require('../assets/GPX.svg')"
+                        :src="gpxImg"
                     />&nbsp;<img class="w-6"
-                        :src="require('../assets/IGC.svg')"
+                        :src="igcImg"
                     />&nbsp;<i
                         class="fas fa-download"
                       ></i></span
@@ -279,6 +279,9 @@
 <script lang="ts">
 import { defineComponent, ref } from "vue";
 import type {Ref} from "vue";
+import gpxImg from "@/assets/GPX.svg"
+import igcImg from "@/assets/IGC.svg"
+
 import {
   Dialog as DialogHead,
   DialogOverlay,
@@ -298,6 +301,8 @@ export default defineComponent({
     return {
       slideOpen,
       commit_date: Commit.cfdtrackjoiner,
+      gpxImg,
+      igcImg
     };
   },
   components: {
