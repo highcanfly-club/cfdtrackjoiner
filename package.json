@@ -15,9 +15,8 @@
   "dependencies": {
     "@headlessui/vue": "^1.7.0",
     "@vuepic/vue-datepicker": "^3.4.7",
-    "crypto-js": "^4.1.1",
-    "dexie": "^4.0.0-alpha.3",
-    "gpxparser": "^3.0.8",
+    "crypto-es": "^1.2.7",
+    "dexie": "^4.0.0-alpha.4",
     "vue": "^3.2.39",
     "vue-router": "^4.1.5"
   },
