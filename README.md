@@ -130,4 +130,4 @@ TrackJoinerComponent.vue is a symlink to CFDTrackJoiner/src/views/TrackJoinerVie
     ```
 
 # API documentation
-  * Typedoc is built at https://eltorio.github.io/cfdtrackjoiner/
+  * Typedoc is built at https://highcanfly-club.github.io/cfdtrackjoiner/

@@ -6,11 +6,11 @@
  * FIT Parser is adapted from Dimitrios Kanellopoulos's project https://github.com/jimmykane/fit-parser (MIT license)
  * GPX Parser is adapted from Lucas Trebouet's project https://github.com/Luuka/GPXParser.js (MIT license)
  */
-import { Dexie } from "dexie";
+ import Dexie from "dexie";
 import CryptoJS from "crypto-js"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
-import IGCParser from "igc-parser"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
-import { FitParser } from "fit-parser";
-import type { FitData } from "fit-parser";
+import {IGCParser} from "./igc-parser"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
+import { FitParser } from "./fit-parser/fit-parser";
+import type { FitData } from "./fit-parser/fit-parser";
 import gpxParser from "gpxparser"; //tsc/trasnspileModule needs {compilerOptions: { esModuleInterop: true}}
 import type { Track as GpxParserTrack } from "gpxparser";
 
