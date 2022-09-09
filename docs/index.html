@@ -11,67 +11,106 @@
 <div class="tsd-page-title">
 <h2>CFDTrackJoiner</h2></div>
 <div class="tsd-panel tsd-typography">
-<a href="#vue-3--vite--typescript--tailwindcss--fontawesome" id="vue-3--vite--typescript--tailwindcss--fontawesome" style="color: inherit; text-decoration: none;">
-  <h1>Vue 3 + Vite + Typescript + Tailwindcss + Fontawesome</h1>
+<a href="#cfdtrackjoiner" id="cfdtrackjoiner" style="color: inherit; text-decoration: none;">
+  <h1>CFDTrackJoiner</h1>
 </a>
-<p>This template should help get you started developing with Vue 3 in Vite. The template uses <a href="https://vuejs.org/">Vue 3</a>, <a href="https://vitejs.dev/">Vite</a>, <a href="https://tailwindcss.com/">Tailwind css</a> and <a href="https://fontawesome.com/">Fontawesome 6</a>.</p>
+<p>Technology demonstrator for joining GPX, FIT and IGC files for the new french &quot;CFD Marche et Vol&quot;.
+This project is maintained by <a href="https://www.highcanfly.club">High Can Fly | Club de parapente du Nord</a>.
+If you want to help us, your help is welcomed.
+If you want to take your paraglider license with us take a tour on our website, there is a link for getting it.</p>
 
-<a href="#vite" id="vite" style="color: inherit; text-decoration: none;">
-  <h2>Vite</h2>
+<a href="#limitations" id="limitations" style="color: inherit; text-decoration: none;">
+  <h1>Limitations</h1>
 </a>
-<ul>
-<li>@ path is defined as ./src</li>
-<li>~ path is defined as ./node_modules</li>
-<li>§ path is defined as ./fontawesome</li>
-<li>npm run dev : launch development environment and serve it to <a href="http://localhost:5173">http://localhost:5173</a></li>
-<li>npm run build : compile, optimize and minify to dist/ directory</li>
-<li>npm run preview : serve dist/ directory to <a href="http://localhost:4173">http://localhost:4173</a></li>
-</ul>
-
-<a href="#howto" id="howto" style="color: inherit; text-decoration: none;">
-  <h2>Howto</h2>
-</a>
-<ul>
-<li>Simply copy this repo with &quot;Use this template&quot; or fork it</li>
-<li>Clone your new repo</li>
-<li>issue &quot;npm i&quot; in your local clone </li>
-<li>issue &quot;npm run dev&quot;</li>
-<li>browser <a href="http://localhost:5173">http://localhost:5173</a></li>
-</ul>
-
-<a href="#tailwind-css" id="tailwind-css" style="color: inherit; text-decoration: none;">
-  <h2>Tailwind css</h2>
-</a>
-<ul>
-<li>Tailwind is embedded with my default theme in tailwindcss.config.cjs</li>
-<li>All classes are availables in development environment (usefull for UI debug with devtools)</li>
-<li>Built css is parsed by Purgecss for removing all unused classes, take a look to postcss.config.cjs</li>
-</ul>
-
-<a href="#fontawesome-6" id="fontawesome-6" style="color: inherit; text-decoration: none;">
-  <h2>Fontawesome 6</h2>
-</a>
-<ul>
-<li>Fontawesome 6 Free is embedded</li>
-<li>Please use fas, fal, fab… classes rather thant fa-solid, fa-light… (see §/fontawesome/fontawesomeminify.ts)</li>
-<li>When you build your app, §/fontawesome/fontawesomeminify.ts is run for subsetting roughly all Fontawesome fonts.</li>
-<li>The main idea is to scan the produced css files, extract all unicode codes and try to subsetting all fa-*.ttf fonts with this unicode list. When done woff/woff2 are derived from the minifyied Truetype font.</li>
-<li>It is very usefull if you use a few icon and probably divide by 30 your Fontawesome fonts size. (remove the task in package.json if you don&#39;t want)</li>
-</ul>
-
-<a href="#recommended-ide-setup" id="recommended-ide-setup" style="color: inherit; text-decoration: none;">
-  <h2>Recommended IDE Setup</h2>
-</a>
-<ul>
-<li><a href="https://code.visualstudio.com/">VS Code</a> + <a href="https://marketplace.visualstudio.com/items?itemName=Vue.volar">Volar</a></li>
-</ul>
+<p>This is a pre-alpha version sort of a technology demonstrator.</p>
+<p>Today it is only tested with FIT files coming from a Garmin® Fēnix 6x Pro, Garmin® Fēnix 5s or Garmin® Fēnix 3 and IGC files coming from SkyBean® SkyDrop variometer and GPX exported from Strava®.</p>
+<p>Currently if an interval overlap another the join is not processed.</p>
 
 <a href="#license" id="license" style="color: inherit; text-decoration: none;">
-  <h2>License</h2>
+  <h1>License</h1>
+</a>
+<p>  Provided &quot;as is&quot; under MIT license.</p>
+<pre><code><span class="hl-0"> * </span><span class="hl-1">IGC</span><span class="hl-0"> </span><span class="hl-2">Parser</span><span class="hl-0"> </span><span class="hl-2">is</span><span class="hl-0"> </span><span class="hl-2">adapted</span><span class="hl-0"> </span><span class="hl-2">from</span><span class="hl-0"> </span><span class="hl-2">Tobias</span><span class="hl-0"> </span><span class="hl-2">Bieniek</span><span class="hl-3">&#39;s project https://github.com/Turbo87/igc-parser (MIT license</span><span class="hl-4">)</span><br/><span class="hl-0"> * </span><span class="hl-1">FIT</span><span class="hl-0"> </span><span class="hl-2">Parser</span><span class="hl-0"> </span><span class="hl-2">is</span><span class="hl-0"> </span><span class="hl-2">adapted</span><span class="hl-0"> </span><span class="hl-2">from</span><span class="hl-0"> </span><span class="hl-2">Dimitrios</span><span class="hl-0"> </span><span class="hl-2">Kanellopoulos</span><span class="hl-3">&#39;s project https://github.com/jimmykane/fit-parser (MIT license</span><span class="hl-4">)</span><br/><span class="hl-0"> * </span><span class="hl-1">GPX</span><span class="hl-0"> </span><span class="hl-2">Parser</span><span class="hl-0"> </span><span class="hl-2">is</span><span class="hl-0"> </span><span class="hl-2">adapted</span><span class="hl-0"> </span><span class="hl-2">from</span><span class="hl-0"> </span><span class="hl-2">Lucas</span><span class="hl-0"> </span><span class="hl-2">Trebouet</span><span class="hl-3">&#39;s project https://github.com/Luuka/GPXParser.js (MIT license</span><span class="hl-4">)</span><br/><span class="hl-0"> </span>
+</code></pre>
+
+<a href="#test-and-basic-help" id="test-and-basic-help" style="color: inherit; text-decoration: none;">
+  <h1>Test and basic help</h1>
+</a>
+<p><a href="https://cfdmv.highcanfly.club/">https://cfdmv.highcanfly.club/</a>  the app<br><a href="https://cfdmv.highcanfly.club/help">https://cfdmv.highcanfly.club/help</a> the same app with the help slider open  </p>
+
+<a href="#integration-in-vue3-project" id="integration-in-vue3-project" style="color: inherit; text-decoration: none;">
+  <h1>Integration in Vue3 project</h1>
+</a>
+<p><a href="https://www.highcanfly.club">High Can Fly website</a> integrates this project in an <a href="https://www.highcanfly.club/trackjoiner">integrated card</a><br><a href="https://github.com/eltorio/vue-highcanfly/blob/main/src/views/ViewTrackjoiner.vue">see code in github</a><br>TrackJoinerComponent.vue is a symlink to CFDTrackJoiner/src/views/TrackJoinerView.vue    </p>
+
+<a href="#deploy-on-clouflare-pages" id="deploy-on-clouflare-pages" style="color: inherit; text-decoration: none;">
+  <h1>Deploy on Clouflare Pages</h1>
+</a>
+<p>  After forking this repository, you can deploy it on Cloudflare Pages  </p>
+<pre><code><span class="hl-2">Build</span><span class="hl-0"> </span><span class="hl-5">command</span><span class="hl-0">: </span><span class="hl-2">npm</span><span class="hl-0"> </span><span class="hl-2">run</span><span class="hl-0"> </span><span class="hl-2">build</span><br/><span class="hl-2">Build</span><span class="hl-0"> </span><span class="hl-2">output</span><span class="hl-0"> </span><span class="hl-5">directory</span><span class="hl-0">: /</span><span class="hl-2">dist</span><br/><span class="hl-2">Root</span><span class="hl-0"> </span><span class="hl-5">directory</span><span class="hl-0">: /</span>
+</code></pre>
+
+<a href="#vuejs-v3" id="vuejs-v3" style="color: inherit; text-decoration: none;">
+  <h1>Vue.js v3</h1>
 </a>
 <ul>
-<li><a href="https://github.com/eltorio/vue-vite-tailwindcss-fontawesome/blob/main/LICENSE.md">MIT</a> for my work</li>
-<li>others are under their own license</li>
+<li>Vue.js v3 code is available at the root <a href="https://cfdmv.highcanfly.club">https://cfdmv.highcanfly.club</a></li>
+<li>This project is built as a vuejs v3 template. See implentation in /src/views/TrackJoinerView.vue</li>
+</ul>
+
+<a href="#legacy-sample-usage" id="legacy-sample-usage" style="color: inherit; text-decoration: none;">
+  <h1>Legacy sample usage</h1>
+</a>
+<ul>
+<li><p>Legacy code is still available <a href="https://cfdmv.highcanfly.club/legacy2.html">https://cfdmv.highcanfly.club/legacy2.html</a></p>
+</li>
+<li><p>First, you must include the required JavaScript library (jQuery) you can host them on your website or link them directly from some cdn:</p>
+<pre><code class="language-html"><span class="hl-6">&lt;</span><span class="hl-7">script</span><span class="hl-8"> </span><span class="hl-9">src</span><span class="hl-8">=</span><span class="hl-10">&#39;https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js&#39;</span><span class="hl-6">&gt;&lt;/</span><span class="hl-7">script</span><span class="hl-6">&gt;</span>
+</code></pre>
+</li>
+<li><p>you also need these local sources (minified):</p>
+<pre><code class="language-html"><span class="hl-6">&lt;</span><span class="hl-7">script</span><span class="hl-8"> </span><span class="hl-9">src</span><span class="hl-8">=</span><span class="hl-10">&quot;https://cfdmv.highcanfly.club/js/trackjoiner.js&quot;</span><span class="hl-6">&gt;&lt;/</span><span class="hl-7">script</span><span class="hl-6">&gt;</span>
+</code></pre>
+<p>if you need the source files:</p>
+<pre><code class="language-html"><span class="hl-6">&lt;</span><span class="hl-7">script</span><span class="hl-8"> </span><span class="hl-9">src</span><span class="hl-8">=</span><span class="hl-10">&quot;https://cfdmv.highcanfly.club/js/trackjoiner-dev.js&quot;</span><span class="hl-6">&gt;&lt;/</span><span class="hl-7">script</span><span class="hl-6">&gt;</span>
+</code></pre>
+</li>
+<li><p>Second, place the two buttons for flies and for hikes and the button for the result:</p>
+<pre><code class="language-html"><span class="hl-6">&lt;</span><span class="hl-7">input</span><span class="hl-0"> </span><span class="hl-9">id</span><span class="hl-0">=</span><span class="hl-10">&quot;filesFly&quot;</span><span class="hl-0"> </span><span class="hl-9">type</span><span class="hl-0">=</span><span class="hl-10">&#39;file&#39;</span><span class="hl-0"> </span><span class="hl-9">accept</span><span class="hl-0">=</span><span class="hl-10">&#39;.igc,.fit,.gpx&#39;</span><span class="hl-0"> </span><span class="hl-9">onchange</span><span class="hl-0">=</span><span class="hl-10">&#39;</span><span class="hl-11">openFile</span><span class="hl-10">(</span><span class="hl-2">event</span><span class="hl-10">, </span><span class="hl-2">trackTypes</span><span class="hl-10">.</span><span class="hl-1">FLY</span><span class="hl-10">, </span><span class="hl-2">insertDBCallback</span><span class="hl-10">)&#39;</span><span class="hl-0"> </span><span class="hl-9">multiple</span><span class="hl-0"> </span><span class="hl-9">disabled</span><span class="hl-6">/&gt;</span><span class="hl-0"> </span><br/><span class="hl-6">&lt;</span><span class="hl-7">input</span><span class="hl-0"> </span><span class="hl-9">id</span><span class="hl-0">=</span><span class="hl-10">&quot;filesHike&quot;</span><span class="hl-0"> </span><span class="hl-9">type</span><span class="hl-0">=</span><span class="hl-10">&#39;file&#39;</span><span class="hl-0"> </span><span class="hl-9">accept</span><span class="hl-0">=</span><span class="hl-10">&#39;.igc,.fit,.gpx&#39;</span><span class="hl-0"> </span><span class="hl-9">onchange</span><span class="hl-0">=</span><span class="hl-10">&#39;</span><span class="hl-11">openFile</span><span class="hl-10">(</span><span class="hl-2">event</span><span class="hl-10">,</span><span class="hl-2">trackTypes</span><span class="hl-10">.</span><span class="hl-1">HIKE</span><span class="hl-10">, </span><span class="hl-2">insertDBCallback</span><span class="hl-10">)&#39;</span><span class="hl-0"> </span><span class="hl-9">multiple</span><span class="hl-0"> </span><span class="hl-9">disabled</span><span class="hl-6">/&gt;</span><br/><span class="hl-6">&lt;</span><span class="hl-7">input</span><span class="hl-0"> </span><span class="hl-9">id</span><span class="hl-0">=</span><span class="hl-10">&quot;joinBtn&quot;</span><span class="hl-0"> </span><span class="hl-9">type</span><span class="hl-0">=</span><span class="hl-10">&#39;button&#39;</span><span class="hl-0"> </span><span class="hl-9">onclick</span><span class="hl-0">=</span><span class="hl-10">&#39;</span><span class="hl-11">getDBasIGCString</span><span class="hl-10">()&#39;</span><span class="hl-0"> </span><span class="hl-9">value</span><span class="hl-0">=</span><span class="hl-10">&quot;Join&quot;</span><span class="hl-0"> </span><span class="hl-9">disabled</span><span class="hl-6">/&gt;</span>
+</code></pre>
+<p>The openFile function will be the entry point of the process. Function insertDBCallback is the call back function called when parsing and DB insert are finished.
+In a minimal void process an empty function will be sufficient but something more complex will be probably necessary.
+For example in the provided index.hml page the call back is used for filling an html table with the current content of the DB and enabling a button for retrieving the result</p>
+<pre><code class="language-javascript"><span class="hl-12">var</span><span class="hl-0"> </span><span class="hl-11">insertDBCallback</span><span class="hl-0"> = </span><span class="hl-12">function</span><span class="hl-0">(){</span><br/><span class="hl-0">  </span><span class="hl-11">showHTMLTable</span><span class="hl-0">(</span><span class="hl-3">&quot;#parsedTable&quot;</span><span class="hl-0">);      </span><span class="hl-13">// Look at index.html for seeing showHTMLTable</span><br/><span class="hl-0">  </span><span class="hl-11">$</span><span class="hl-0">(</span><span class="hl-3">&#39;#joinBtn&#39;</span><span class="hl-0">).</span><span class="hl-11">removeAttr</span><span class="hl-0">(</span><span class="hl-3">&#39;disabled&#39;</span><span class="hl-0">);</span><br/><span class="hl-0">};</span>
+</code></pre>
+</li>
+<li><p>Third, init everything
+In the provided example the initialization is very simple</p>
+<pre><code class="language-javascript"><span class="hl-0">  </span><span class="hl-11">initDB</span><span class="hl-0">();                                   </span><span class="hl-13">// Needed for preparing the database</span><br/><span class="hl-0"> </span><span class="hl-11">$</span><span class="hl-0">(</span><span class="hl-2">window</span><span class="hl-0">).</span><span class="hl-11">on</span><span class="hl-0">(</span><span class="hl-3">&#39;load&#39;</span><span class="hl-0">, </span><span class="hl-12">function</span><span class="hl-0">() {            </span><span class="hl-13">// Be sure to wait for all the libraries to be loaded before allowing parsing</span><br/><span class="hl-0">    </span><span class="hl-11">$</span><span class="hl-0">(</span><span class="hl-3">&#39;#filesFly&#39;</span><span class="hl-0">).</span><span class="hl-11">removeAttr</span><span class="hl-0">(</span><span class="hl-3">&#39;disabled&#39;</span><span class="hl-0">);    </span><span class="hl-13">// now the load event was fired so the buttons can be enabled</span><br/><span class="hl-0">    </span><span class="hl-11">$</span><span class="hl-0">(</span><span class="hl-3">&#39;#filesHike&#39;</span><span class="hl-0">).</span><span class="hl-11">removeAttr</span><span class="hl-0">(</span><span class="hl-3">&#39;disabled&#39;</span><span class="hl-0">);</span><br/><span class="hl-0"> });</span>
+</code></pre>
+</li>
+<li><p>Finally, get the result!</p>
+<pre><code class="language-javascript"><span class="hl-12">var</span><span class="hl-0"> </span><span class="hl-11">getDBasIGCString</span><span class="hl-0"> = </span><span class="hl-12">function</span><span class="hl-0">(){</span><br/><span class="hl-0">  </span><span class="hl-11">getDBFixesRowsAsPromise</span><span class="hl-0">().</span><span class="hl-11">then</span><span class="hl-0">((</span><span class="hl-2">rows</span><span class="hl-0">) </span><span class="hl-12">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">                  </span><span class="hl-12">var</span><span class="hl-0"> </span><span class="hl-2">igcString</span><span class="hl-0"> = </span><span class="hl-11">igcProducer</span><span class="hl-0">(</span><span class="hl-2">rows</span><span class="hl-0">);</span><br/><span class="hl-0">                  </span><span class="hl-13">// the IGC file is now in igcString variable</span><br/><span class="hl-0">                  </span><span class="hl-13">// use it as you want</span><br/><span class="hl-0">                  </span><span class="hl-13">// a more complex example is in index.html</span><br/><span class="hl-0">                }).</span><span class="hl-11">catch</span><span class="hl-0">((</span><span class="hl-2">error</span><span class="hl-0">) </span><span class="hl-12">=&gt;</span><span class="hl-0"> {</span><br/><span class="hl-0">                  </span><span class="hl-2">console</span><span class="hl-0">.</span><span class="hl-11">log</span><span class="hl-0">(</span><span class="hl-2">error</span><span class="hl-0">.</span><span class="hl-11">toString</span><span class="hl-0">());</span><br/><span class="hl-0">                });   </span><br/><span class="hl-0"> };</span>
+</code></pre>
+</li>
+<li><p>If you want to upload the string as a pseudo file this is a sample fuction for doing that</p>
+<pre><code class="language-javascript"><span class="hl-11">simpleStringUploadAsFile</span><span class="hl-0">(</span><span class="hl-3">&#39;https://parapente.ffvl.fr/cfdmvAPI&#39;</span><span class="hl-0">,</span><span class="hl-3">&#39;file&#39;</span><span class="hl-0">,</span><span class="hl-3">&quot;TEMP.IGC&quot;</span><span class="hl-0">,</span><span class="hl-2">igcString</span><span class="hl-0">,</span><span class="hl-3">&quot;ffvl_name&quot;</span><span class="hl-0">,</span><span class="hl-3">&quot;ffvl_password&quot;</span><span class="hl-0">);</span>
+</code></pre>
+<p>Note that on the demo page call is</p>
+<pre><code class="language-javascript"><span class="hl-11">simpleStringUploadAsFile</span><span class="hl-0">(</span><span class="hl-3">&#39;upload.php&#39;</span><span class="hl-0">,</span><span class="hl-3">&#39;file&#39;</span><span class="hl-0">,</span><span class="hl-3">&#39;TEMP.IGC&#39;</span><span class="hl-0">,</span><span class="hl-11">$</span><span class="hl-0">(</span><span class="hl-3">&#39;#igcResult&#39;</span><span class="hl-0">).</span><span class="hl-11">html</span><span class="hl-0">(),</span><span class="hl-3">&#39;ffvl_name&#39;</span><span class="hl-0">,</span><span class="hl-3">&#39;ffvl_password&#39;</span><span class="hl-0">);</span>
+</code></pre>
+<p>so the content of the &quot;igcResult&quot; html pre tag is sent to the upload.php page. The demo is not working on GitHub pages because there is no server side processor but on my own server it works 😉.</p>
+<p>these function can be something like:</p>
+<pre><code class="language-javascript"><span class="hl-12">var</span><span class="hl-0"> </span><span class="hl-11">simpleStringUploadAsFile</span><span class="hl-0"> = </span><span class="hl-12">function</span><span class="hl-0"> (</span><span class="hl-2">uploadURL</span><span class="hl-0">, </span><span class="hl-2">fileFormFieldName</span><span class="hl-0">, </span><span class="hl-2">fileName</span><span class="hl-0">, </span><span class="hl-2">data</span><span class="hl-0">,</span><span class="hl-2">name</span><span class="hl-0">,</span><span class="hl-2">password</span><span class="hl-0">)</span><br/><span class="hl-0">{</span><br/><br/><span class="hl-0">  </span><span class="hl-12">var</span><span class="hl-0"> </span><span class="hl-2">fd</span><span class="hl-0"> = </span><span class="hl-12">new</span><span class="hl-0"> </span><span class="hl-11">FormData</span><span class="hl-0">();                            </span><span class="hl-13">//works on all modern browsers</span><br/><span class="hl-0">  </span><span class="hl-12">var</span><span class="hl-0"> </span><span class="hl-2">file</span><span class="hl-0"> = </span><span class="hl-12">new</span><span class="hl-0"> </span><span class="hl-11">Blob</span><span class="hl-0">([</span><span class="hl-2">data</span><span class="hl-0">], {</span><span class="hl-2">type:</span><span class="hl-0"> </span><span class="hl-3">&#39;plain/text&#39;</span><span class="hl-0">});</span><br/><br/><span class="hl-0">  </span><span class="hl-2">fd</span><span class="hl-0">.</span><span class="hl-11">append</span><span class="hl-0">(</span><span class="hl-2">fileFormFieldName</span><span class="hl-0">, </span><span class="hl-2">file</span><span class="hl-0">, </span><span class="hl-2">fileName</span><span class="hl-0">);       </span><span class="hl-13">//this is the &lt;input type=&#39;file&#39; name=&#39;file&#39;/&gt;</span><br/><span class="hl-0">  </span><span class="hl-2">fd</span><span class="hl-0">.</span><span class="hl-11">append</span><span class="hl-0">(</span><span class="hl-3">&#39;name&#39;</span><span class="hl-0">,</span><span class="hl-2">name</span><span class="hl-0">);                             </span><span class="hl-13">//&lt;input type=&#39;text&#39; name=&#39;name&#39; /&gt;</span><br/><span class="hl-0">  </span><span class="hl-2">fd</span><span class="hl-0">.</span><span class="hl-11">append</span><span class="hl-0">(</span><span class="hl-3">&#39;password&#39;</span><span class="hl-0">,</span><span class="hl-2">password</span><span class="hl-0">);                     </span><span class="hl-13">//&lt;input type=&#39;password&#39; name=&#39;password&#39; /&gt;</span><br/><span class="hl-0">  </span><span class="hl-13">//... fd.append(&#39;field_name&#39;,&#39;value&#39;);</span><br/><br/><span class="hl-0">  </span><span class="hl-2">$</span><span class="hl-0">.</span><span class="hl-11">ajax</span><span class="hl-0">({</span><br/><span class="hl-0">    </span><span class="hl-2">url:</span><span class="hl-0"> </span><span class="hl-2">uploadURL</span><span class="hl-0">,</span><br/><span class="hl-0">    </span><span class="hl-2">method:</span><span class="hl-0"> </span><span class="hl-3">&#39;post&#39;</span><span class="hl-0">,</span><br/><span class="hl-0">    </span><span class="hl-2">data:</span><span class="hl-0"> </span><span class="hl-2">fd</span><span class="hl-0">,</span><br/><span class="hl-0">    </span><span class="hl-2">processData:</span><span class="hl-0"> </span><span class="hl-12">false</span><span class="hl-0">,</span><br/><span class="hl-0">    </span><span class="hl-2">contentType:</span><span class="hl-0"> </span><span class="hl-12">false</span><span class="hl-0"> ,</span><br/><span class="hl-0">    </span><span class="hl-11">success</span><span class="hl-2">:</span><span class="hl-0"> </span><span class="hl-12">function</span><span class="hl-0">(</span><span class="hl-2">response</span><span class="hl-0">){</span><span class="hl-11">$</span><span class="hl-0">(</span><span class="hl-3">&quot;html&quot;</span><span class="hl-0">).</span><span class="hl-11">html</span><span class="hl-0">(</span><span class="hl-2">response</span><span class="hl-0">);}  </span><span class="hl-13">// this is for replacing the content of the page with the POST result</span><br/><span class="hl-0">  });</span><br/><span class="hl-0">}</span>
+</code></pre>
+</li>
+</ul>
+
+<a href="#api-documentation" id="api-documentation" style="color: inherit; text-decoration: none;">
+  <h1>API documentation</h1>
+</a>
+<ul>
+<li>Typedoc is built at <a href="https://eltorio.github.io/cfdtrackjoiner/">https://eltorio.github.io/cfdtrackjoiner/</a></li>
 </ul>
 </div></div>
 <div class="col-4 col-menu menu-sticky-wrap menu-highlight">
