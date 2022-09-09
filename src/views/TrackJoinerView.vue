@@ -510,7 +510,7 @@ import {
 
 } from "@/trackjoiner/trackjoiner";
 import { Track, trackTypes } from "@/trackjoiner/trackjoiner";
-import TrackJoinerHelp from "@/views/trackJoinerHelp.vue";
+import TrackJoinerHelp from "@/views/TrackJoinerHelp.vue";
 import Commit from "§/commit.json";
 import gpxImg from "@/assets/GPX.svg"
 import igcImg from "@/assets/IGC.svg"
