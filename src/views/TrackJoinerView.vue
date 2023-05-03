@@ -373,8 +373,10 @@
       </div>
       <div class="flex items-center">
         <p class="text-sm text-gray-700">Correction de l'enregistrement de départ</p>
-        <datepicker locale="fr" inputClassName="text-sm text-gray-900" v-model="state.fixErroneusDTPicker" enableSeconds
-          autoApply :clearable="false" /><br />
+        <div class="w-96">
+          <datepicker locale="fr" inputClassName="text-sm text-gray-900" v-model="state.fixErroneusDTPicker" enableSeconds
+            autoApply :clearable="false" />
+        </div><br />
         <button v-if="state.selected_row_original_date != state.fixErroneusDTPicker" @click="clickfixErroneusDT" class="
           inline-flex
           items-center
@@ -409,9 +411,11 @@
       </div>
       <div class="flex items-center">
         <p class="text-sm text-gray-700">Division de l'enregistrement</p>
-        <datepicker locale="fr" inputClassName="text-sm text-gray-900" v-model="state.splitDTPicker" enableSeconds
-          :min-date="state.splitDTPicker_start" :max-date="state.splitDTPicker_end" autoApply :clearable="false"
-          @update:modelValue="state.splitDTPicker_changed = true" />
+        <div class="w-96">
+          <datepicker locale="fr" inputClassName="text-sm text-gray-900" v-model="state.splitDTPicker" enableSeconds
+            :min-date="state.splitDTPicker_start" :max-date="state.splitDTPicker_end" autoApply :clearable="false"
+            @update:modelValue="state.splitDTPicker_changed = true" />
+        </div>
         <br />
         <button
           v-if="state.splitDTPicker_changed && state.splitDTPicker != null && state.splitDTPicker > state.splitDTPicker_start && state.splitDTPicker < state.splitDTPicker_end"
@@ -490,6 +494,7 @@
   <track-joiner-help />
 </template>
 <script lang="ts">
+import '@vuepic/vue-datepicker/dist/main.css'
 import { reactive, ref, defineComponent } from "vue";
 import {
   initDB,
@@ -774,7 +779,6 @@ export default defineComponent({
 </style>
 <style lang="scss">
 $dp__font_size: 0.875rem;
-@import '@vuepic/vue-datepicker/src/VueDatePicker/style/main.scss';
 
 .dp__input {
   @extend .dp__input;
