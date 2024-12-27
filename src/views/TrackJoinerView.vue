@@ -374,7 +374,7 @@
       <div class="flex items-center">
         <p class="text-sm text-gray-700">Correction de l'enregistrement de départ</p>
         <div class="w-96">
-          <datepicker locale="fr" inputClassName="text-sm text-gray-900" v-model="state.fixErroneusDTPicker" enableSeconds
+          <Datepicker locale="fr" inputClassName="text-sm text-gray-900" v-model="state.fixErroneusDTPicker" enableSeconds
             autoApply :clearable="false" />
         </div><br />
         <button v-if="state.selected_row_original_date != state.fixErroneusDTPicker" @click="clickfixErroneusDT" class="
@@ -512,9 +512,10 @@ import {
   fileTypes,
   openFileAsPromise,
   showDB,
+  Track, 
+  trackTypes
+} from "@/trackjoiner/trackjoiner.js";
 
-} from "@/trackjoiner/trackjoiner";
-import { Track, trackTypes } from "@/trackjoiner/trackjoiner";
 import TrackJoinerHelp from "@/views/TrackJoinerHelp.vue";
 import Commit from "§/commit.json";
 import gpxImg from "@/assets/GPX.svg"
