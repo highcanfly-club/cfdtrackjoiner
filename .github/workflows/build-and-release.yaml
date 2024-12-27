@@ -55,5 +55,5 @@ jobs:
             gh release upload $TAG_NAME dist/js/gpx-parser.js --clobber
             gh release upload $TAG_NAME dist/js/igc-parser.js --clobber
             gh release upload $TAG_NAME dist/js/trackjoiner-min.js --clobber
-            gh release upload $TAG_NAME dist/js/trackjoiners.js --clobber
+            gh release upload $TAG_NAME dist/js/trackjoiner.js --clobber
 
