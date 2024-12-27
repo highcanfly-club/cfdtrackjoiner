@@ -1,6 +1,6 @@
 /*!
 =========================================================
-* © 2022 Ronan LE MEILLAT for High Can Fly
+* © 2024 Ronan LE MEILLAT for High Can Fly
 =========================================================
 This website use:
 - Vite, Vue3, FontAwesome 6, TailwindCss 3
@@ -9,7 +9,7 @@ This website use:
 import { createApp } from 'vue'
 import App from '@/App.vue'
 import { createWebHistory, createRouter, RouteRecordRaw } from "vue-router"
-import metaMixin from "@/mixins/MetaMixin"
+import metaMixin from "./mixins/MetaMixin.js"
 import '@/index.css'
 
 const routes = [

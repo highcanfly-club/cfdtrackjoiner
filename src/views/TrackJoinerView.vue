@@ -774,7 +774,7 @@ export default defineComponent({
 </style>
 <style lang="scss">
 $dp__font_size: 0.875rem;
-@import '@vuepic/vue-datepicker/src/VueDatePicker/style/main.scss';
+@import '@vuepic/vue-datepicker/dist/main.css';
 
 .dp__input {
   @extend .dp__input;
