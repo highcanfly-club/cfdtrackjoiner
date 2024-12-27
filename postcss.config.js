@@ -1,6 +1,6 @@
 /*!
 =========================================================
-* © 2022 Ronan LE MEILLAT for High Can Fly
+* © 2024 Ronan LE MEILLAT for High Can Fly
 =========================================================
 This website use:
 - Vite, Vue3, FontAwesome 6, TailwindCss 3

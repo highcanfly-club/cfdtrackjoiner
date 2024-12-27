@@ -29,7 +29,7 @@ function mdSync(dir) {
     });
 }
 
-function callbackErr(err) {
+function copyCallbackErr(err) {
     if (err) throw err;
     console.log('File copied');
 }
@@ -60,6 +60,7 @@ function minify(fin, fout) {
 
 function compileTypeScript(fin, fout) {
     return new Promise((resolve, reject) => {
+        console.log(`compiling ${fin} to ${fout}`);
         fs.readFile(fin, 'utf8', function (err, data) {
             if (err) {
                 reject(console.log(err));
@@ -84,9 +85,9 @@ const commits = gitlog.default({
 mdSync('./dist');
 mdSync('./dist/css');
 mdSync('./dist/js');
-fs.copyFile('./public/css/blue.css', './dist/css/blue.css', callbackErr);
-fs.copyFile('./public/legacy.html', './dist/legacy.html', callbackErr);
-fs.copyFile('./public/legacy2.html', './dist/legacy2.html', callbackErr);
+fs.copyFile('./public/css/blue.css', './dist/css/blue.css', copyCallbackErr);
+fs.copyFile('./public/legacy.html', './dist/legacy.html', copyCallbackErr);
+fs.copyFile('./public/legacy2.html', './dist/legacy2.html', copyCallbackErr);
 
 console.log(`compiling ${TRACKJOINER} and create bundle ${DEV_BUNDLE}`);
 Promise.all([
@@ -94,11 +95,10 @@ Promise.all([
     compileTypeScript(IGC_TS, IGC_JS),
     compileTypeScript(GPX_TS, GPX_JS)
 ]).then(() => {
+    console.log("Start bundling");
     browserify({ standalone: "Trackjoiner" })
         .add(TRACKJOINER)
-        // .plugin(tsify, { noImplicitAny: false, debug: true, target: "es6" })
         .plugin(esmify)
-        .plugin(commonShakeify)
         .transform(babelify, { presets: ["@babel/preset-env"], extensions: ['.jsx', '.js', '.tsx', '.ts'] })
         .bundle()
         .pipe(fs.createWriteStream(DEV_BUNDLE, { autoClose: true }))
@@ -106,7 +106,7 @@ Promise.all([
         .on('close', () => {
             let bundle = fs.readFileSync(DEV_BUNDLE, { encoding: 'utf8', flag: 'r' });
             let standalone = fs.readFileSync(STANDALONE, { encoding: 'utf8', flag: 'r' });
-            let trackjoiner = `${bundle}\n${standalone}\nconsole.log("Trackjoiner v:${(new Date(commits[0].authorDate)).toISOString()} ©Ronan Le Meillat, see https://github.com/eltorio/cfdtrackjoiner")`;
+            let trackjoiner = `${bundle}\n${standalone}\nconsole.log("Trackjoiner v:${(new Date(commits[0].authorDate)).toISOString()} ©Ronan Le Meillat, see https://github.com/highcanfly-club/cfdtrackjoiner")`;
             fs.writeFileSync(LEGACY_TRACKJOINER, trackjoiner);
             console.log(`Minify bundle to ${MIN_BUNDLE}`);
             minify(LEGACY_TRACKJOINER, MIN_BUNDLE).then(() => {

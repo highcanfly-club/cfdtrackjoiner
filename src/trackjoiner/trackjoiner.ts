@@ -6,13 +6,13 @@
  * FIT Parser is adapted from Dimitrios Kanellopoulos's project https://github.com/jimmykane/fit-parser (MIT license)
  * GPX Parser is adapted from Lucas Trebouet's project https://github.com/Luuka/GPXParser.js (MIT license)
  */
-import Dexie from "dexie";
-import CryptoES from "crypto-es"; 
-import {IGCParser} from "./igc-parser"; 
-import { FitParser } from "./fit-parser";
-import type { FitData } from "./fit-parser";
-import {gpxParser} from "./gpx-parser"; 
-import type { Track as GpxParserTrack } from "./gpx-parser";
+import {Dexie} from "dexie";
+import CryptoES from "@highcanfly/crypto-es"; 
+import {IGCParser} from "./igc-parser/index.js"; 
+import { FitParser } from "./fit-parser/index.js";
+import type { FitData } from "./fit-parser/index.js";
+import {gpxParser} from "./gpx-parser/index.js"; 
+import type { Track as GpxParserTrack } from "./gpx-parser/index.js";
 
 const DB_SCHEMA_VERSION = 1;
 const nanoDB_name = "cfdmv_db";
