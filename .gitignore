@@ -27,7 +27,6 @@ launch-serve
 launch-dist
 wrangler-serve
 commit.json
-package-lock.json
 sanity-conf.json
 auth0-conf.json
 _sensitive_datas/_sensitive_datas.tar.xz
